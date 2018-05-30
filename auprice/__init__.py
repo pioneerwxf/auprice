@@ -1,0 +1,1 @@
+from .auprice import app
