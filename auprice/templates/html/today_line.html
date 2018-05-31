@@ -1,0 +1,177 @@
+{% extends "layout.html" %}
+
+{% block title %}<h4 class="page-title">近期走势</h4></li>{% endblock %}<li>
+{% block body %}  
+<div class="content-page">
+<!-- Styles -->
+<style>
+#chartdiv {
+    width   : 100%;
+    height  : 500px;
+}                                                                   
+</style>
+
+<!-- Resources -->
+<script src="https://www.amcharts.com/lib/3/amcharts.js"></script>
+<script src="https://www.amcharts.com/lib/3/serial.js"></script>
+<script src="https://www.amcharts.com/lib/3/plugins/export/export.min.js"></script>
+<link rel="stylesheet" href="https://www.amcharts.com/lib/3/plugins/export/export.css" type="text/css" media="all" />
+<script src="https://www.amcharts.com/lib/3/themes/light.js"></script>
+
+<!-- Chart code -->
+<script>
+var interval;
+var websocket;
+
+var websocketEchoServerUri = "wss://echo.websocket.org/";
+websocket = initWebSocket(websocketEchoServerUri);
+var chartData = generateChartData();
+var chart = AmCharts.makeChart("chartdiv", {
+    "type": "serial",
+    "theme": "light",
+    "marginRight": 80,
+    "dataProvider": chartData,
+    "valueAxes": [{
+        "position": "left",
+        "title": "current price"
+    }],
+    "graphs": [{
+        "id": "g1",
+        "fillAlphas": 0.4,
+        "valueField": "price",
+         "balloonText": "<div style='margin:5px; font-size:19px;'>买入价:<b>[[value]]</b></div>"
+    },
+    {
+        "id": "g2",
+        "fillAlphas": 0.8,
+        "valueField": "price_sell",
+         "balloonText": "<div style='margin:5px; font-size:19px;'>卖出价:<b>[[value]]</b></div>"
+    }],
+    "chartScrollbar": {
+        "graph": "g1",
+        "scrollbarHeight": 80,
+        "backgroundAlpha": 0,
+        "selectedBackgroundAlpha": 0.1,
+        "selectedBackgroundColor": "#888888",
+        "graphFillAlpha": 0,
+        "graphLineAlpha": 0.5,
+        "selectedGraphFillAlpha": 0,
+        "selectedGraphLineAlpha": 1,
+        "autoGridCount": true,
+        "color": "#AAAAAA"
+    },
+    "chartCursor": {
+        "categoryBalloonDateFormat": "JJ:NN, DD MMMM",
+        "cursorPosition": "mouse"
+    },
+    "categoryField": "date",
+    "categoryAxis": {
+        "minPeriod": "mm",
+        "parseDates": true
+    },
+    "export": {
+        "enabled": true,
+         "dateFormat": "YYYY-MM-DD HH:NN:SS"
+    }
+});
+
+chart.addListener("dataUpdated", zoomChart);
+// when we apply theme, the dataUpdated event is fired even before we add listener, so
+// we need to call zoomChart here
+zoomChart();
+// this method is called when chart is first inited as we listen for "dataUpdated" event
+function zoomChart() {
+    // different zoom methods can be used - zoomToIndexes, zoomToDates, zoomToCategoryValues
+    chart.zoomToIndexes(chartData.length - 1440, chartData.length);
+}
+
+function initWebSocket(wsUri) {
+  console.log("init is start")
+  var ws = new WebSocket(wsUri);
+  ws.onopen = onConnect;
+  ws.onclose = onClose;
+  ws.onerror = onError;
+  ws.onmessage = updateChart;
+  return ws;
+}
+
+/*  
+ * Called during the onmessage event. Your application will need 
+ * to parse  your websocket server's response into a data object 
+ * or array of dataObjects your chart expects
+ */
+function updateChart(wsEvent) {
+    console.log("begin update")
+  var newData = JSON.parse(wsEvent.data);
+  chartData.push.apply(chartData, newData);
+  // keep only 50 datapoints on screen for the demo
+  // if (chartData.length > 5000) {
+  //   chartData.splice(0, chartData.length - 5000);
+  // }
+  writeToScreen("<span style='color: blue'>Received: " + wsEvent.data + "</span>");
+  chart.validateData(); //call to redraw the chart with new data
+}
+
+function onConnect(wsEvent) {
+  writeToScreen("Server connection successful. Listening for data now.");
+  interval = setInterval(getDataFromServer, 60000); //we're simulating a datafeed by calling our getDataFromServer method every 2 seconds
+}
+
+function onError(wsEvent) {
+  writeToScreen("<span style='color: red'>ERROR:" + wsEvent + "</span>");
+}
+
+function onClose(wsEvent) {
+  writeToScreen("Server connection closed");
+  clearInterval(interval);
+}
+
+//For debug messaging
+function writeToScreen(message) {
+  var pre = document.createElement("p");
+  pre.style.wordWrap = "break-word";
+  pre.innerHTML = message;
+}
+
+function generateChartData() {
+    var chartData = [];
+    {% for price in pricelists %}
+        chartData.push({
+            date: "{{ price.datetime }}",
+            price: "{{ price.price_cn-0.2 }}",  //工行的实际卖出价格
+            price_sell: "{{ price.price_cn-0.6 }}",  //工行的实际买入价格，交易者的卖出价格
+        });
+    {% endfor %}
+    return chartData;
+}
+/*
+ * This simulates a data response from the server 
+ * using websocket.org's echo server. The method generates 
+ * a random sized array of values and writes it to 
+ * the server in the form of a JSON string, 
+ * which will be echoed back to the client
+ */
+function httpGet(theUrl){
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.open( "GET", theUrl, false ); // false for synchronous request
+    xmlHttp.send( null );
+    return xmlHttp.responseText;
+}
+
+function getDataFromServer() {
+    var newData = [];
+    newDataUrl = "http://127.0.0.1:5000/get_new_data";
+    newPrice = JSON.parse(httpGet(newDataUrl).toString());
+    newData.push({
+      date: newPrice.datetime,
+      price: newPrice.price_cn - 0.2,
+      price_sell: newPrice.price_cn - 0.6
+    });
+  websocket.send(JSON.stringify(newData));
+}
+</script>
+
+<!-- HTML -->
+<div id="chartdiv" style="margin-top:40px;"></div>       
+</div>
+{% endblock %}
