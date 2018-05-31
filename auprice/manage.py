@@ -137,8 +137,4 @@ def add_history_entry():
         time.sleep(60)   # 休息10s后继续前一天的历史数据
 
 if __name__ == "__main__":
-<<<<<<< HEAD
     manager.run()
-=======
-    manager.run()
->>>>>>> aa8751803dc3861c66b36f1472b30c1e11e4e9f4

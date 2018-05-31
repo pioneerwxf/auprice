@@ -158,8 +158,4 @@ def del_trade():
     return redirect(url_for('trades'))
 
 if __name__ == '__main__':
-<<<<<<< HEAD
     app.run(debug=True)
-=======
-    app.run(debug=True)
->>>>>>> aa8751803dc3861c66b36f1472b30c1e11e4e9f4
