@@ -18,7 +18,6 @@ app.config.update(dict(
 def connect_db():
     """Connects to the specific database."""
     rv = sqlite3.connect(app.config['DATABASE'])
-    print app.config['DATABASE']
     rv.row_factory = sqlite3.Row
     return rv
 
@@ -159,4 +158,8 @@ def del_trade():
     return redirect(url_for('trades'))
 
 if __name__ == '__main__':
+<<<<<<< HEAD
     app.run(debug=True)
+=======
+    app.run(debug=True)
+>>>>>>> aa8751803dc3861c66b36f1472b30c1e11e4e9f4

@@ -52,7 +52,7 @@ def get_auprice():
         try:
             aup_re = requests.post(auprice_api, data = {})
             aup_price = round(aup_re.json()['responseParams'],2)
-        except Exception:
+        except Exception, e:
             print "接口异常 60s后重新尝试"
             time.sleep(60)
             continue
@@ -137,4 +137,8 @@ def add_history_entry():
         time.sleep(60)   # 休息10s后继续前一天的历史数据
 
 if __name__ == "__main__":
+<<<<<<< HEAD
     manager.run()
+=======
+    manager.run()
+>>>>>>> aa8751803dc3861c66b36f1472b30c1e11e4e9f4
