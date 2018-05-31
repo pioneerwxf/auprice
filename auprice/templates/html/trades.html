@@ -125,8 +125,8 @@
               <thead>
               <tr>
                 <th class="table-id" >ID</th>
-                <th class="table-title">交易类型</th>
-                <th class="table-author am-hide-sm-only">创建状态</th>
+                <th class="table-title am-hide-sm-only">交易类型</th>
+                <th class="table-author">创建状态</th>
                 <th class="table-author am-hide-sm-only">创建时间</th>
                 <th class="table-type">重量</th>
                 <th class="table-author">创建价格</th>
@@ -143,8 +143,8 @@
             {% for trade in trades_lists %}
               <tr id="trade{{trade.id}}">     
                 <td class="tradeid {% if trade.end_status == 1 %} bg-success text-white {% endif %}" data-id="{{trade.id}}">{{ trade.id }}</td>
-                <td class="category {% if trade.category == -1 %} text-warning {% endif %}" data-id="{{trade.category}}">{% if trade.category == 1 %}先买入{% else %}先卖出{% endif %}</td>
-                <td class="am-hide-sm-only create_status {% if trade.create_status == 0 %} bg-warning text-white {% endif %}" data-id="{{trade.create_status}}">{% if trade.category == 1 %}买入{% else %}卖出{% endif %}{% if trade.create_status == 1 %}开仓{% elif trade.create_status == 0 %}挂单{% endif %}</td>
+                <td class="am-hide-sm-only category {% if trade.category == -1 %} text-warning {% endif %}" data-id="{{trade.category}}">{% if trade.category == 1 %}先买入{% else %}先卖出{% endif %}</td>
+                <td class="create_status {% if trade.create_status == 0 %} bg-warning text-white {% endif %}" data-id="{{trade.create_status}}">{% if trade.category == 1 %}买入{% else %}卖出{% endif %}{% if trade.create_status == 1 %}开仓{% elif trade.create_status == 0 %}挂单{% endif %}</td>
                 <td class="am-hide-sm-only create_time" data-id="{{trade.create_time}}">{{ trade.create_time }}</td>
                 <td class="weight" data-id="{{trade.weight}}">{{ trade.weight }} g</td>
                 <td class="create_price" data-id="{{trade.create_price}}">{{ trade.create_price }}</td>
