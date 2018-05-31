@@ -1,2 +1,6 @@
 *.pyc
+.DS_Store
+MANIFEST.in
 auprice/flaskr.db
+auprice.egg-info/
+auenv/

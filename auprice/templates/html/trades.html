@@ -54,7 +54,8 @@
 		          <div class="am-btn-toolbar">
 		            <div class="am-btn-group am-btn-group-xs am-u-sm-12 am-u-md-12">
 		              <button type="button" class="am-btn am-btn-default" data-am-modal="{target: '#doc-modal-1', closeViaDimmer: 0, width: 500, height: 800}"><span class="am-icon-plus"></span> 新增</button>
-                  <div class="am-u-sm-12 am-u-md-10"> {{new_price.datetime}} 买入{{new_price.price_cn-0.2}}----卖出{{new_price.price_cn-0.6}}</div>
+                  <hr>
+                  <div class="am-u-sm-12 am-u-md-10"> {{new_price.datetime}}  <span class="text-primary">买入{{new_price.price_cn-0.2}}</span>  ----<span class="text-success">卖出{{new_price.price_cn-0.6}}<span></div>
 		            </div>
 		          </div>
 		        </div>	
@@ -123,17 +124,17 @@
             <table class="am-table am-table-striped am-table-hover table-main">
               <thead>
               <tr>
-                <th class="table-id am-hide-sm-only" >ID</th>
+                <th class="table-id" >ID</th>
                 <th class="table-title">交易类型</th>
                 <th class="table-author am-hide-sm-only">创建状态</th>
                 <th class="table-author am-hide-sm-only">创建时间</th>
                 <th class="table-type">重量</th>
                 <th class="table-author">创建价格</th>
 
-                <th class="table-author">成交价格</th>
+                <th class="table-author am-hide-sm-only">成交价格</th>
                 <th class="table-date am-hide-sm-only">成交时间</th>
                 <th class="table-author am-hide-sm-only">成交状态</th>
-                <th class="table-author am-hide-sm-only">收益</th>
+                <th class="table-author">收益</th>
                 <th class="table-date am-hide-sm-only">年化</th>
                 <th class="table-set">操作</th>
               </tr>
@@ -141,19 +142,19 @@
               <tbody>
             {% for trade in trades_lists %}
               <tr id="trade{{trade.id}}">     
-                <td class="am-hide-sm-only tradeid {% if trade.end_status == 1 %} bg-success text-white {% endif %}" data-id="{{trade.id}}">{{ trade.id }}</td>
+                <td class="tradeid {% if trade.end_status == 1 %} bg-success text-white {% endif %}" data-id="{{trade.id}}">{{ trade.id }}</td>
                 <td class="category {% if trade.category == -1 %} text-warning {% endif %}" data-id="{{trade.category}}">{% if trade.category == 1 %}先买入{% else %}先卖出{% endif %}</td>
                 <td class="am-hide-sm-only create_status {% if trade.create_status == 0 %} bg-warning text-white {% endif %}" data-id="{{trade.create_status}}">{% if trade.category == 1 %}买入{% else %}卖出{% endif %}{% if trade.create_status == 1 %}开仓{% elif trade.create_status == 0 %}挂单{% endif %}</td>
                 <td class="am-hide-sm-only create_time" data-id="{{trade.create_time}}">{{ trade.create_time }}</td>
                 <td class="weight" data-id="{{trade.weight}}">{{ trade.weight }} g</td>
                 <td class="create_price" data-id="{{trade.create_price}}">{{ trade.create_price }}</td>
-                <td class="end_price" data-id="{% if trade.end_price %}{{trade.end_price}}{% endif %}">{% if trade.end_price %}{{trade.end_price}}{% endif %}</td>
+                <td class="am-hide-sm-only end_price" data-id="{% if trade.end_price %}{{trade.end_price}}{% endif %}">{% if trade.end_price %}{{trade.end_price}}{% endif %}</td>
                 <td class="am-hide-sm-only end_time" data-id="{% if trade.end_time %}{{ trade.end_time }}{% endif %}">{% if trade.end_time %}{{ trade.end_time }}{% endif %}</td>
                 <td class="am-hide-sm-only end_status {% if trade.end_status == 0 %} bg-warning text-white {% endif %}" data-id="{{trade.end_status}}">{% if trade.end_status == 1 %}{% if trade.category == 1 %}卖出{% else %}买入{% endif %}{% if trade.end_status == 1 %}平仓{% elif trade.end_status == 0 %}挂单{% endif %}{% endif %}</td>
                 {% if trade.end_status == 1 %}
-                  <td class="am-hide-sm-only {% if trade.profit<0 %} text-success {% else %} text-danger{% endif %}">{{ trade.profit }}</td>
+                  <td class="{% if trade.profit<0 %} text-success {% else %} text-danger{% endif %}">{{ trade.profit }}</td>
                 {% else %}
-                  <td class="am-hide-sm-only {% if trade.category*((new_price.price_cn)-0.4-0.2*trade.category-trade.create_price)<0 %} text-success {% else %} text-danger{% endif %}">{{ trade.category*((new_price.price_cn)-0.4-0.2*trade.category-trade.create_price) }} X {{trade.weight}}  </td>
+                  <td class="{% if trade.category*((new_price.price_cn)-0.4-0.2*trade.category-trade.create_price)<0 %} text-success {% else %} text-danger{% endif %}">{{ trade.category*((new_price.price_cn)-0.4-0.2*trade.category-trade.create_price) }} X {{trade.weight}}  </td>
                 {% endif %}
                 <td class="am-hide-sm-only">{{ trade.year_ratio*100 }}%</td>
                 

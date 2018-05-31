@@ -3,6 +3,7 @@
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<link rel="shortcut icon" href="{{ url_for('static', filename='img/logo.jpg') }}">
 		<title>AuGoto 后台</title>
 		<link rel="stylesheet" href="{{ url_for('static', filename='css/amazeui.css') }}" />
 		<link rel="stylesheet" href="{{ url_for('static', filename='css/core.css') }}" />
@@ -58,7 +59,7 @@
 				    	<!-- User -->
 						<div class="user-box am-hide-sm-only">
 	                        <div class="user-img">
-	                            <img src="https://gss1.bdstatic.com/-vo3dSag_xI4khGkpoWK1HF6hhy/baike/w%3D268%3Bg%3D0/sign=f746d7d706d162d985ee651a29e4ced1/6d81800a19d8bc3e447b9fd98e8ba61ea8d345b6.jpg" alt="user-img" title="Mat Helme" class="img-circle img-thumbnail img-responsive">
+	                            <img src="{{ url_for('static', filename='img/logo.jpg') }}" alt="user-img" title="Mat Helme" class="img-circle img-thumbnail img-responsive">
 	                            <div class="user-status offline"><i class="am-icon-dot-circle-o" aria-hidden="true"></i></div>
 	                        </div>
 	                        <h5><a href="#">Wang</a> </h5>
