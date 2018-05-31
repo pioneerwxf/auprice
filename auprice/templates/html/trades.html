@@ -75,7 +75,7 @@
                           <form class="am-form am-text-sm" action="/add" method="post" >
                               <div class="am-form-group">
                                 <div class="am-g">
-                                  <label class="am-u-md-4 am-md-text-right" for="doc-select-1">类型</label>
+                                  <label class="am-u-md-4 am-u-sm-4 am-md-text-right" for="doc-select-1">类型</label>
                                     <input type="radio" name="category" value="1" checked>先买入  -----
                                     <input type="radio" name="category" value="-1">先卖出
                                     <span class="am-form-caret"></span>
@@ -84,22 +84,22 @@
                                                           
                               <div class="am-form-group">
                                 <div class="am-g">
-                                  <label class="am-u-md-4 am-md-text-right am-padding-left-0">价格</label>
-                                  <input class="am-u-md-6 form-control"  name="create_price" placeholder="270" value="270">
+                                  <label class="am-u-md-4 am-u-sm-4 am-md-text-right am-padding-left-0">价格</label>
+                                  <input class="am-u-md-6 am-u-sm-6 form-control"  name="create_price" placeholder="270" value="270">
                                 </div>
                               </div>
 
                               <div class="am-form-group">
                                 <div class="am-g">
-                                  <label class="am-u-md-4 am-md-text-right am-padding-left-0">重量</label>
-                                  <input name="weight" class="am-u-md-6 form-control" placeholder="100" value="100">
+                                  <label class="am-u-md-4 am-u-sm-4 am-md-text-right am-padding-left-0">重量</label>
+                                  <input name="weight" class="am-u-md-6 am-u-sm-6 form-control" placeholder="100" value="100">
                                 </div>
                               </div>
                               
 
                               <div class="am-form-group">
                                 <div class="am-g">
-                                  <label class="am-u-md-4 am-md-text-right" for="doc-select-1">状态</label>
+                                  <label class="am-u-md-4 am-u-sm-4 am-md-text-right" for="doc-select-1">状态</label>
                                     <input type="radio" name="create_status" value=0>挂单  -----
                                     <input type="radio" name="create_status" value=1 checked>成交
                                     <span class="am-form-caret"></span>
@@ -161,7 +161,7 @@
                 <td>
                   <div class="am-btn-toolbar">
                     <div class="am-btn-group am-btn-group-xs">
-                      <button type="button" data-id="{{ trade.id }}" class="edit-btn am-btn am-btn-default am-btn-xs am-text-secondary" data-am-modal="{target: '#edit-modal', closeViaDimmer: 0, width: 500, height: 800}"><span class="am-icon-pencil-square-o"></span> 编辑</button>
+                      <button type="button" data-id="{{ trade.id }}" class="edit-btn am-btn am-btn-default am-btn-xs am-text-secondary" data-am-modal="{target: '#edit-modal', closeViaDimmer: 0, width: 500, height: 800}"><span class="am-icon-pencil-square-o"></span> <span class="am-hide-sm-only" style="float:right;">编辑</span></button>
                       
                       <button class="am-btn am-btn-default am-btn-xs am-text-danger am-hide-sm-only"><a href="/del?tradeid={{trade.id}}" class="am-icon-trash-o">删除</a> </button>
                     </div>
@@ -193,27 +193,27 @@
                                 
                                 <div class="am-form-group">
                                   <div class="am-g">
-                                    <label class="am-u-md-4 am-md-text-right am-padding-left-0">价格</label>
-                                    <input class="am-u-md-6 form-control trade-create_price"  name="create_price" value="">
+                                    <label class="am-u-md-4 am-u-sm-4 am-md-text-right am-padding-left-0">价格</label>
+                                    <input class="am-u-md-6 am-u-sm-6 form-control trade-create_price"  name="create_price" value="">
                                   </div>
                                 </div>
                                 <div class="am-form-group">
                                   <div class="am-g">
-                                    <label class="am-u-md-4 am-md-text-right am-padding-left-0">重量</label>
-                                    <input name="weight" class="am-u-md-6 form-control trade-weight" value="">
+                                    <label class="am-u-md-4 am-u-sm-4 am-md-text-right am-padding-left-0">重量</label>
+                                    <input name="weight" class="am-u-md-6 am-u-sm-6 form-control trade-weight" value="">
                                   </div>
                                 </div>
                                 
 
                                 <div class="am-form-group">
                                   <div class="am-g">
-                                    <label class="am-u-md-4 am-md-text-right am-padding-left-0">时间</label>
-                                    <input class="am-u-md-6 form-control trade-create_time"  name="create_time" value="">
+                                    <label class="am-u-md-4 am-u-sm-4 am-md-text-right am-padding-left-0">时间</label>
+                                    <input class="am-u-md-6 am-u-sm-6 form-control trade-create_time"  name="create_time" value="">
                                   </div>
                                 </div>
                                 <div class="am-form-group">
                                   <div class="am-g">
-                                    <label class="am-u-md-4 am-md-text-right" for="doc-select-1">状态</label>
+                                    <label class="am-u-md-4 am-u-sm-4 am-md-text-right" for="doc-select-1">状态</label>
                                       <input class="create_status0" type="radio" name="create_status" value="0">挂单  -----
                                       <input class="create_status1" type="radio" name="create_status" value="1">成交
                                       <span class="am-form-caret"></span>
@@ -224,20 +224,20 @@
                                 <!-- end things -->
                                 <div class="am-form-group">
                                   <div class="am-g">
-                                    <label class="am-u-md-4 am-md-text-right am-padding-left-0">价格</label>
-                                    <input class="am-u-md-6 form-control trade-end_price"  name="end_price" value="">
+                                    <label class="am-u-md-4 am-u-sm-4 am-md-text-right am-padding-left-0">价格</label>
+                                    <input class="am-u-md-6 am-u-sm-6 form-control trade-end_price"  name="end_price" value="">
                                   </div>
                                 </div>
 
                                 <div class="am-form-group">
                                   <div class="am-g">
-                                    <label class="am-u-md-4 am-md-text-right am-padding-left-0">时间</label>
-                                    <input class="am-u-md-6 form-control trade-end_time"  name="end_time" value="">
+                                    <label class="am-u-md-4 am-u-sm-4 am-md-text-right am-padding-left-0">时间</label>
+                                    <input class="am-u-md-6 am-u-sm-6 form-control trade-end_time"  name="end_time" value="">
                                   </div>
                                 </div>
                                 <div class="am-form-group">
                                   <div class="am-g">
-                                    <label class="am-u-md-4 am-md-text-right" for="doc-select-1">状态</label>
+                                    <label class="am-u-md-4 am-u-sm-4 am-md-text-right" for="doc-select-1">状态</label>
                                       <input class="end_status" type="radio" name="end_status" value="-1">观望  -----
                                       <input class="end_status0" type="radio" name="end_status" value="0">挂单  -----
                                       <input class="end_status1" type="radio" name="end_status" value="1">成交
