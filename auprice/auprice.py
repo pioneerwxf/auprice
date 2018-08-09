@@ -55,7 +55,7 @@ def today():
 
 @app.route('/analyse')
 def analyse():
-    trades_lists = query_db('select * from trades where id>0 and end_status=1 order by end_time')
+    trades_lists = query_db('select * from trades where id>72 and end_status=1 order by end_time')
     profit_accumulate_list = []
     profit_accumulate = 0
     time_list = []
