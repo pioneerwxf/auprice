@@ -64,7 +64,7 @@ def analyse():
         net_array = {}
         profit_accumulate = profit_accumulate + trade["profit"]
         cost_time = (datetime.strptime(trade["end_time"], '%Y-%m-%d %H:%M:%S') - datetime(2018, 6, 1, 0, 0)).total_seconds()
-        profit_per_year = round(profit_accumulate/1100000/cost_time*(365*24*3600) * 100, 2)
+        profit_per_year = round(profit_accumulate/1100000/cost_time*(365*24*3600), 2)
         net_value = round(profit_accumulate / 1100000 + 1,3)
         end_time = trade["end_time"]
 
