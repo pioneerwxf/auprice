@@ -53,6 +53,27 @@ def today():
     # print pricelists
     return render_template('html/today_line.html', pricelists=pricelists)
 
+@app.route('/analyse')
+def analyse():
+    trades_lists = query_db('select * from trades where id>72 and end_status=1 order by end_time')
+    profit_accumulate_list = []
+    profit_accumulate = 0
+    time_list = []
+    net_value_list = []
+    for trade in trades_lists:
+        net_array = {}
+        profit_accumulate = profit_accumulate + trade["profit"]
+        cost_time = (datetime.strptime(trade["end_time"], '%Y-%m-%d %H:%M:%S') - datetime(2018, 6, 1, 0, 0)).total_seconds()
+        profit_per_year = round(profit_accumulate/1100000/cost_time*(365*24*3600) * 100, 2)
+        net_value = round(profit_accumulate / 1100000 + 1,3)
+        end_time = trade["end_time"]
+
+        net_array["profit_per_year"] = profit_per_year
+        net_array["value"] = net_value
+        net_array["end_time"] = end_time
+        net_value_list.append(net_array)
+    return render_template('html/analyse_line.html', net_value_list=net_value_list)
+
 @app.route('/get_new_data')
 def get_new_data():
     price = query_db('select * from pricelists order by id DESC limit 1')
