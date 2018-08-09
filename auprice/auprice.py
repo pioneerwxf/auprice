@@ -72,9 +72,9 @@ def history():
 def trades():
     new_price = json.loads(get_new_data())
     trades_lists = query_db('select * from trades order by end_status, create_time DESC')
-    profits_done = [0,0]
-    weights_hold = [0,0]
-    mean_price = [0,0]
+    profits_done = [0,0] # 已成交收益
+    weights_hold = [0,0] # 持仓重量，[先买入, 先卖出]
+    mean_price = [0,0] # 
     for trade in trades_lists:
         if trade["category"] ==1:  # 先买入
             if (trade["create_status"] == 1) & (trade["end_status"] != 1):  # 已开仓 等待 平仓
@@ -91,7 +91,12 @@ def trades():
                 profits_done[1] = trade["profit"] + profits_done[1]
 
     count = len(trades_lists)
-    return render_template('html/trades.html', trades_lists=trades_lists, count=count, new_price=new_price,mean_price=mean_price, profits_done=profits_done, weights_hold=weights_hold)
+    cost_time = (datetime.now() - datetime(2018, 6, 1, 0, 0)).total_seconds()
+    profit_per_year = round((profits_done[1] + profits_done[1])/1100000 / cost_time * (365*24*3600) * 100, 2)
+    hold_profit = weights_hold[0]*(new_price["price_cn"]-0.6-mean_price[0])+weights_hold[1]*(mean_price[1]-(new_price["price_cn"]-0.2))
+    hold_cost = weights_hold[0] * mean_price[0] + weights_hold[1] * mean_price[1]
+    profit_hold_percent = round(hold_profit / hold_cost * 100, 2)
+    return render_template('html/trades.html',profit_hold_percent=profit_hold_percent, trades_lists=trades_lists, count=count, new_price=new_price,mean_price=mean_price, profits_done=profits_done, weights_hold=weights_hold, profit_per_year=profit_per_year)
 
 @app.route('/add', methods=['POST'])
 def add_trade():
