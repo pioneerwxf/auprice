@@ -85,17 +85,17 @@ def add_entry():
         if len(price_array) >= 30:  # 监控半小时内的数据 一分钟一次 故数组长度为30即可
             price_array.pop(0)
         if len(price_array) >1:
-            if (math.ceil(price_array[-1]) != math.ceil(price_array[-2])) & ((datetime.datetime.now()-sendsms_time).total_seconds()>600): #10分钟内不重复发短信
+            if (math.ceil(price_array[-1]) != math.ceil(price_array[-2])) & ((datetime.datetime.now()-sendsms_time).total_seconds()>1800): #10分钟内不重复发短信
                 sendsms(sms_template = "SMS_133964781",nowtime = nowtime, buy_price = buy_price, sell_price = sell_price)
                 sendsms_time = datetime.datetime.now()
                 print "发送整数阈值短信成功"
         if len(price_array) >= 10:  # 监控10分钟的数据波动，10分钟波动大于0.5元需要关注
-            if (abs(price_array[-1] - price_array[-10]) >= 0.5)  & ((datetime.datetime.now()-sendsms_time).total_seconds()>600): #10分钟内不重复发短信
+            if (abs(price_array[-1] - price_array[-10]) >= 0.5)  & ((datetime.datetime.now()-sendsms_time).total_seconds()>1800): #10分钟内不重复发短信
                 sendsms(sms_template = "SMS_133979780", float_price = abs(price_array[-1] - price_array[-10]), price_array = str(price_array[-10]) + '~' + str(price_array[-1]))
                 sendsms_time = datetime.datetime.now()
                 print "发送10分钟内波动过大短信成功"
         if len(price_array) >= 20:  # 监控10分钟的数据波动，10分钟波动大于0.5元需要关注
-            if (abs(price_array[-1] - price_array[-20]) >= 0.5) & ((datetime.datetime.now()-sendsms_time).total_seconds()>600):
+            if (abs(price_array[-1] - price_array[-20]) >= 0.5) & ((datetime.datetime.now()-sendsms_time).total_seconds()>1800):
                 sendsms(sms_template = "SMS_133969878", time_interval = "20", float_price = abs(price_array[-1] - price_array[-20]), price_array = str(price_array[-20]) + '~' + str(price_array[-1]))
                 sendsms_time = datetime.datetime.now()
                 print "发送20分钟内波动过大短信成功"
