@@ -113,7 +113,7 @@ def trades():
 
     count = len(trades_lists)
     cost_time = (datetime.now() - datetime(2018, 6, 1, 0, 0)).total_seconds()
-    profit_per_year = round((profits_done[1] + profits_done[1])/1100000 / cost_time * (365*24*3600) * 100, 2)
+    profit_per_year = round((profits_done[0] + profits_done[1])/1100000 / cost_time * (365*24*3600) * 100, 2)
     hold_profit = weights_hold[0]*(new_price["price_cn"]-0.6-mean_price[0])+weights_hold[1]*(mean_price[1]-(new_price["price_cn"]-0.2))
     hold_cost = weights_hold[0] * mean_price[0] + weights_hold[1] * mean_price[1]
     profit_hold_percent = round(hold_profit / hold_cost * 100, 2)
