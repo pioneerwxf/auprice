@@ -116,7 +116,10 @@ def trades():
     profit_per_year = round((profits_done[1] + profits_done[1])/1100000 / cost_time * (365*24*3600) * 100, 2)
     hold_profit = weights_hold[0]*(new_price["price_cn"]-0.6-mean_price[0])+weights_hold[1]*(mean_price[1]-(new_price["price_cn"]-0.2))
     hold_cost = weights_hold[0] * mean_price[0] + weights_hold[1] * mean_price[1]
-    profit_hold_percent = round(hold_profit / hold_cost * 100, 2)
+    if hold_cost:
+        profit_hold_percent = round(hold_profit / hold_cost * 100, 2)
+    else:
+        profit_hold_percent = 0
     return render_template('html/trades.html',profit_hold_percent=profit_hold_percent, trades_lists=trades_lists, count=count, new_price=new_price,mean_price=mean_price, profits_done=profits_done, weights_hold=weights_hold, profit_per_year=profit_per_year)
 
 @app.route('/add', methods=['POST'])
