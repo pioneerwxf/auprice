@@ -49,7 +49,8 @@ def index():
 
 @app.route('/today')
 def today():
-    pricelists = query_db('select * from pricelists limit 2880')
+    pricelists = query_db('select * from pricelists order by datetime DESC limit 10080') # select 2 days
+    pricelists.reverse()
     # print pricelists
     return render_template('html/today_line.html', pricelists=pricelists)
 
