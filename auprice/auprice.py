@@ -49,7 +49,7 @@ def index():
 
 @app.route('/today')
 def today():
-    pricelists = query_db('select * from pricelists')
+    pricelists = query_db('select * from pricelists limit 2880')
     # print pricelists
     return render_template('html/today_line.html', pricelists=pricelists)
 

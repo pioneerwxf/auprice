@@ -50,7 +50,7 @@ def get_auprice():
     auprice_api = "https://www.gomegold.com/Index/MethodQuoteprice"  # 国美黄金接口     
     while not aup_price:
         try:
-            aup_re = requests.post(auprice_api, data = {})
+            aup_re = requests.get(auprice_api, data = {})
             aup_price = round(aup_re.json()['responseParams'],2)
         except Exception, e:
             print "接口异常 60s后重新尝试"
