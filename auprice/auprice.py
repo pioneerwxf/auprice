@@ -109,15 +109,15 @@ def trades():
         if data:
             # print trades_lists
             #return json.dumps(trades_lists)
-            response = make_response(jsonify({'error':False}))
-            response.headers['Access-Control-Allow-Origin'] = '*'
-            response.headers['Access-Control-Allow-Methods'] = 'GET'
-            response.headers['Access-Control-Allow-Headers'] = 'x-requested-with,content-type' 
-            return response
-            # resp = jsonify({'error':False})
-            # # 跨域设置
-            # resp.headers['Access-Control-Allow-Origin'] = '*'
-            # return resp
+            # response = make_response(jsonify({'error':False}))
+            # response.headers['Access-Control-Allow-Origin'] = '*'
+            # response.headers['Access-Control-Allow-Methods'] = 'GET'
+            # response.headers['Access-Control-Allow-Headers'] = 'x-requested-with,content-type' 
+            # return response
+            resp = jsonify(json.dumps(trades_lists))
+            # 跨域设置
+            resp.headers['Access-Control-Allow-Origin'] = '*'
+            return resp
     else:
         trades_lists = query_db('select * from trades order by end_status, create_time DESC')
     profits_done = [0,0] # 已成交收益
@@ -156,10 +156,11 @@ def add_trade():
     create_status = int(request.form['create_status'])
     create_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     create_price = float(request.form['create_price'])
+    end_status = False
     db = get_db()
-    db.execute('insert into trades (category, weight, create_time, create_price, create_status ) \
-        values (?, ?, ?, ?, ?)',
-        [category, weight, create_time, create_price, create_status])
+    db.execute('insert into trades (category, weight, create_time, create_price, create_status, end_status ) \
+        values (?, ?, ?, ?, ?, ?)',
+        [category, weight, create_time, create_price, create_status, end_status])
     db.commit()
     flash('New entry was successfully posted')
     return redirect(url_for('trades'))
