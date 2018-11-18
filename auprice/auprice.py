@@ -2,7 +2,7 @@
 # coding: utf-8
 import sqlite3, os, requests, datetime, time, json
 from flask import Flask, request, session, g, redirect, url_for, abort, \
-     render_template, flash, jsonify, make_response
+     render_template, flash, jsonify, make_response, send_from_directory
 from datetime import datetime
 app = Flask(__name__) # create the application instance :)
 app.config.from_object(__name__) # load config from current file
@@ -41,6 +41,13 @@ def query_db(query, args=(), one=False):
     rv = [dict((cur.description[idx][0], value)
                for idx, value in enumerate(row)) for row in cur.fetchall()]
     return (rv[0] if rv else None) if one else rv
+
+# @app.route('/.well-known/acme-challenge/C2vmfA83beBzU-Tm-Uh_C-NBBWlJKmgXxOzBWDWbTM8')
+# def static_from_root():
+#    return send_from_directory(".well-known/acme-challenge", "C2vmfA83beBzU-Tm-Uh_C-NBBWlJKmgXxOzBWDWbTM8",mimetype='text/plain')
+# @app.route('/.well-known/acme-challenge/FE__xsBLbnEzPf2_Aoy32jA8NTq1ChiPLNARFLTChMo')
+# def static_from_roots():
+#     return send_from_directory(".well-known/acme-challenge", "FE__xsBLbnEzPf2_Aoy32jA8NTq1ChiPLNARFLTChMo",mimetype='text/plain')
 
 @app.route('/')
 def index():
@@ -103,7 +110,7 @@ def trades():
             # print trades_lists
             #return json.dumps(trades_lists)
             response = make_response(jsonify({'error':False}))
-            response.headers['Access-Control-Allow-Origin'] = 'https://mybank.icbc.com.cn/*'
+            response.headers['Access-Control-Allow-Origin'] = '*'
             response.headers['Access-Control-Allow-Methods'] = 'GET'
             response.headers['Access-Control-Allow-Headers'] = 'x-requested-with,content-type' 
             return response
@@ -207,4 +214,4 @@ def del_trade():
     return redirect(url_for('trades'))
 
 if __name__ == '__main__':
-    app.run(ssl_context='adhoc')
+    app.run(debug=True, port=5000, ssl_context=('/Users/pioneer/www/auprice/auprice/server.crt', '/Users/pioneer/www/auprice/auprice/server.key'))
