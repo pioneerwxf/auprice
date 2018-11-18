@@ -2,7 +2,7 @@
 # coding: utf-8
 import sqlite3, os, requests, datetime, time, json
 from flask import Flask, request, session, g, redirect, url_for, abort, \
-     render_template, flash
+     render_template, flash, jsonify, make_response
 from datetime import datetime
 app = Flask(__name__) # create the application instance :)
 app.config.from_object(__name__) # load config from current file
@@ -93,7 +93,26 @@ def history():
 @app.route('/trades')
 def trades():
     new_price = json.loads(get_new_data())
-    trades_lists = query_db('select * from trades order by end_status, create_time DESC')
+    hold = request.args.get('hold')  # 持仓的key
+    data = request.args.get('data')  # 返回json的key
+    if hold :
+        # 只看持仓数据
+        trades_lists = query_db('select * from trades where end_status!=1 order by category, create_price DESC')
+        # 用做接口返回json
+        if data:
+            # print trades_lists
+            #return json.dumps(trades_lists)
+            response = make_response(jsonify({'error':False}))
+            response.headers['Access-Control-Allow-Origin'] = 'https://mybank.icbc.com.cn/*'
+            response.headers['Access-Control-Allow-Methods'] = 'GET'
+            response.headers['Access-Control-Allow-Headers'] = 'x-requested-with,content-type' 
+            return response
+            # resp = jsonify({'error':False})
+            # # 跨域设置
+            # resp.headers['Access-Control-Allow-Origin'] = '*'
+            # return resp
+    else:
+        trades_lists = query_db('select * from trades order by end_status, create_time DESC')
     profits_done = [0,0] # 已成交收益
     weights_hold = [0,0] # 持仓重量，[先买入, 先卖出]
     mean_price = [0,0] # 
@@ -188,4 +207,4 @@ def del_trade():
     return redirect(url_for('trades'))
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(ssl_context='adhoc')
