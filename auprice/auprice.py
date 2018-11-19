@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 # coding: utf-8
-import sqlite3, os, requests, datetime, time, json
+import sqlite3, os, requests, datetime, time, json,uuid
 from flask import Flask, request, session, g, redirect, url_for, abort, \
      render_template, flash, jsonify, make_response, send_from_directory
+from flask_wtf.csrf import CsrfProtect
+from sendsms.demo_sms_send import send_sms
 from datetime import datetime
 app = Flask(__name__) # create the application instance :)
 app.config.from_object(__name__) # load config from current file
@@ -48,6 +50,24 @@ def query_db(query, args=(), one=False):
 # @app.route('/.well-known/acme-challenge/FE__xsBLbnEzPf2_Aoy32jA8NTq1ChiPLNARFLTChMo')
 # def static_from_roots():
 #     return send_from_directory(".well-known/acme-challenge", "FE__xsBLbnEzPf2_Aoy32jA8NTq1ChiPLNARFLTChMo",mimetype='text/plain')
+@app.route('/sendsms')
+def sendsms(sms_template, deal_type=None, weight=None, create_price=None, end_price=None, profit=None):
+    __business_id = uuid.uuid1()
+    deal_type = request.args.get('deal_type')  # 交易类型
+    if deal_type == 1:
+        deal_type_text = "卖出平仓"  # 1
+    else:
+        deal_type_text = "买入平仓"  # -1
+    weight = float(request.args.get('weight'))  # 交易重量
+    create_price = float(request.args.get('create_price'))  # 起始价格
+    end_price = float(request.args.get('end_price'))  # 成交价格
+    profit = round(weight * (end_price-create_price) * deal_type, 2)  # 收益
+    sms_template = "SMS_151545719"   # 成交提醒短信模板
+    params = "{\"deal_type\":\"%s\",\"weight\":\"%s\",\"create_price\":\"%s\",\"end_price\":\"%s\",\"profit\":\"%s\"}" \
+        % (deal_type_text, weight, create_price, end_price, profit)
+    print(send_sms(__business_id, "13777414593", "王先锋", sms_template, params))
+    return {"result":"短信发送成功"}
+
 
 @app.route('/')
 def index():
@@ -101,7 +121,7 @@ def history():
 def trades():
     new_price = json.loads(get_new_data())
     hold = request.args.get('hold')  # 持仓的key
-    data = request.args.get('data')  # 返回json的key
+    api = request.args.get('api')  # 代表是api的请求
     condition = request.args.get('condition')  # 返回condition
     if hold :
         # 只看持仓数据
@@ -111,14 +131,7 @@ def trades():
             condition = "end_status!=1"
         trades_lists = query_db('select * from trades where ' + condition + ' order by category, create_price DESC')
         # 用做接口返回json
-        if data:
-            # print trades_lists
-            #return json.dumps(trades_lists)
-            # response = make_response(jsonify({'error':False}))
-            # response.headers['Access-Control-Allow-Origin'] = '*'
-            # response.headers['Access-Control-Allow-Methods'] = 'GET'
-            # response.headers['Access-Control-Allow-Headers'] = 'x-requested-with,content-type' 
-            # return response
+        if api:
             resp = jsonify(json.dumps(trades_lists))
             # 跨域设置
             resp.headers['Access-Control-Allow-Origin'] = '*'
@@ -170,28 +183,41 @@ def add_trade():
     flash('New entry was successfully posted')
     return redirect(url_for('trades'))
 
+csrf = CsrfProtect()
+@csrf.exempt
 @app.route('/edit', methods=['POST'])
 def edit_trade():
-    tradeid = int(request.form['tradeid'])
-    category = int(request.form['category'])
-    weight = float(request.form['weight'])
-    create_status = int(request.form['create_status'])
-    create_time = request.form['create_time']
-    create_price = float(request.form['create_price'])
-    
-    # end time
-    end_status = int(request.form['end_status'])
-    if end_status != -1:
-        if request.form['end_time']:
-            end_time = request.form['end_time']
+    api = request.args.get('api')  # 代表是api的请求
+    if api:
+        tradeid = int(request.json['tradeid'])
+    else:
+        tradeid = int(request.form['tradeid'])
+    this_trade = query_db('select * from trades where id='+str(tradeid))
+    # 如果没有传值，则默认开仓时候的状态
+    if api:
+        category = this_trade[0]["category"]
+        create_status = this_trade[0]["create_status"]
+        create_time = this_trade[0]["create_time"]
+        create_price = this_trade[0]["create_price"]
+        weight = this_trade[0]["weight"]
+        end_status = int(request.json['end_status'])
+        end_price = float(request.json['end_price'])
+    else:
+        weight = float(request.form['weight'])
+        category = int(request.form['category'])
+        create_status = int(request.form['create_status'])
+        create_time = request.form['create_time']
+        create_price = float(request.form['create_price'])
+        end_status = int(request.form['end_status'])
+        if request.form['end_price']:
+            end_price = float(request.form['end_price'])
         else:
-            end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    else:
-        end_time = None
-    if request.form['end_price']:
-        end_price = float(request.form['end_price'])
-    else:
-        end_price = 0
+            end_price = 0
+
+    # end time
+    end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    
     # 成交以后计算利润
     if int(create_status) == 1 and int(end_status) == 1:
         profit = (end_price - create_price) * category * weight
@@ -207,7 +233,13 @@ def edit_trade():
         [category, weight, create_time, create_price, create_status, end_time, end_price, end_status, profit, year_ratio,tradeid])
     db.commit()
     flash('New entry was successfully edited')
-    return redirect(url_for('trades'))
+    if api:
+        resp = jsonify(json.dumps({"result":True}))
+        # 跨域设置
+        resp.headers['Access-Control-Allow-Origin'] = '*'
+        return resp
+    else:
+        return redirect(url_for('trades'))
 
 @app.route('/del', methods=['GET'])
 def del_trade():
