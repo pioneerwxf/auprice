@@ -51,7 +51,7 @@ def query_db(query, args=(), one=False):
 # def static_from_roots():
 #     return send_from_directory(".well-known/acme-challenge", "FE__xsBLbnEzPf2_Aoy32jA8NTq1ChiPLNARFLTChMo",mimetype='text/plain')
 @app.route('/sendsms')
-def sendsms(sms_template, deal_type=None, weight=None, create_price=None, end_price=None, profit=None):
+def sendsms():
     __business_id = uuid.uuid1()
     deal_type = request.args.get('deal_type')  # 交易类型
     if deal_type == 1:
