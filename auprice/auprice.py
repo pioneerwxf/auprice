@@ -3,7 +3,7 @@
 import sqlite3, os, requests, datetime, time, json,uuid
 from flask import Flask, request, session, g, redirect, url_for, abort, \
      render_template, flash, jsonify, make_response, send_from_directory
-from flask_wtf.csrf import CsrfProtect
+from flask_wtf.csrf import CSRFProtect
 from sendsms.demo_sms_send import send_sms
 from datetime import datetime
 app = Flask(__name__) # create the application instance :)
@@ -186,7 +186,7 @@ def add_trade():
     flash('New entry was successfully posted')
     return redirect(url_for('trades'))
 
-csrf = CsrfProtect()
+csrf = CSRFProtect()
 @csrf.exempt
 @app.route('/edit', methods=['POST'])
 def edit_trade():

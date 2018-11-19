@@ -160,7 +160,7 @@ function httpGet(theUrl){
 
 function getDataFromServer() {
     var newData = [];
-    newDataUrl = "http://127.0.0.1:5000/get_new_data";
+    newDataUrl = "https://www.augoto.com/get_new_data";
     newPrice = JSON.parse(httpGet(newDataUrl).toString());
     newData.push({
       date: newPrice.datetime,

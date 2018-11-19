@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # coding: utf-8
-import sqlite3, os, requests, datetime, time, uuid, math, re, json
+import sqlite3, os, requests, datetime, time, uuid, math, re, json, urllib2, urllib
 from flask import Flask, request, session, g, redirect, url_for, abort, \
      render_template, flash
 from flask_script import Manager
-
+from bs4 import BeautifulSoup
 from auprice import app
 from sendsms.demo_sms_send import send_sms
 manager = Manager(app)
@@ -47,16 +47,28 @@ def close_db(error):
 def get_auprice():
     aup_price = None
     nowtime = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    auprice_api = "https://www.gomegold.com/Index/MethodQuoteprice"  # 国美黄金接口     
-    while not aup_price:
-        try:
-            aup_re = requests.get(auprice_api, data = {})
-            aup_price = round(aup_re.json()['responseParams'],2)
-        except Exception, e:
-            print "接口异常 60s后重新尝试"
-            time.sleep(60)
-            continue
-    print(nowtime + " 黄金实时价格     ----买入价：" + str(aup_price - 0.2) + "         ---卖出价：" + str(aup_price - 0.6))
+    
+    # 工行官方黄金接口
+    auprice_api = "http://www.icbc.com.cn/ICBCDynamicSite/Charts/GoldTendencyPicture.aspx"    
+    request = urllib2.Request(auprice_api)
+    response =urllib2.urlopen(request)
+    resHtml = response.read()
+    html = BeautifulSoup(resHtml,features="html.parser")
+    aup_price = float(html.select('#TABLE1 tr:nth-of-type(2) td:nth-of-type(5)')[0].get_text())
+    print(nowtime + " 黄金实时价格     ----买入价：" + str(aup_price + 0.2) + "         ---卖出价：" + str(aup_price - 0.2))
+    
+    # 国美黄金接口 
+    #auprice_api = "https://www.gomegold.com/Index/MethodQuoteprice"  
+    # while not aup_price:
+    #     try:
+    #         aup_re = requests.get(auprice_api, data = {})
+    #         aup_price = round(aup_re.json()['responseParams'],2)
+    #     except Exception, e:
+    #         print "接口异常 60s后重新尝试"
+    #         time.sleep(60)
+    #         continue
+    #print(nowtime + " 黄金实时价格     ----买入价：" + str(aup_price - 0.2) + "         ---卖出价：" + str(aup_price - 0.6))
+
     return aup_price
 
 @manager.command
@@ -79,8 +91,8 @@ def add_entry():
     while True:
         nowtime = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         aup_price = get_auprice()
-        buy_price = round(aup_price - 0.2,2)
-        sell_price = round(aup_price - 0.6,2)
+        buy_price = round(aup_price + 0.2,2)
+        sell_price = round(aup_price - 0.2,2)
         price_array.append(sell_price)
         if len(price_array) >= 30:  # 监控半小时内的数据 一分钟一次 故数组长度为30即可
             price_array.pop(0)
