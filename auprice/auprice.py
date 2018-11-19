@@ -102,9 +102,14 @@ def trades():
     new_price = json.loads(get_new_data())
     hold = request.args.get('hold')  # 持仓的key
     data = request.args.get('data')  # 返回json的key
+    condition = request.args.get('condition')  # 返回condition
     if hold :
         # 只看持仓数据
-        trades_lists = query_db('select * from trades where end_status!=1 order by category, create_price DESC')
+        if condition:
+            condition = condition + " and end_status!=1"
+        else:
+            condition = "end_status!=1"
+        trades_lists = query_db('select * from trades where ' + condition + ' order by category, create_price DESC')
         # 用做接口返回json
         if data:
             # print trades_lists
@@ -215,4 +220,4 @@ def del_trade():
     return redirect(url_for('trades'))
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000, ssl_context=('/Users/pioneer/www/auprice/auprice/server.crt', '/Users/pioneer/www/auprice/auprice/server.key'))
+    app.run(debug=True, port=5000, ssl_context=('/Users/pioneer/www/cert/certificate.crt', '/Users/pioneer/www/cert/private.key'))
