@@ -22,7 +22,7 @@
                         <h4>多头 {{profits_done[0]}}, 空头 {{profits_done[1]}}，年化 {{profit_per_year}}%</h4>
                     </div>
                     <div class="widget-detail-1" style="float: right;">
-                        <h2 class="p-t-10 m-b-0 {% if (weights_hold[0]*(new_price.price_cn-0.6-mean_price[0])+weights_hold[1]*(mean_price[1]-(new_price.price_cn-0.2)))<0 %} text-success {% else %} text-danger{% endif %}"> {{weights_hold[0]*(new_price.price_cn-0.6-mean_price[0])+weights_hold[1]*(mean_price[1]-(new_price.price_cn-0.2))}} </h2>
+                        <h2 class="p-t-10 m-b-0 {% if (weights_hold[0]*(new_price.price_cn-0.2-mean_price[0])+weights_hold[1]*(mean_price[1]-(new_price.price_cn+0.2)))<0 %} text-success {% else %} text-danger{% endif %}"> {{weights_hold[0]*(new_price.price_cn-0.2-mean_price[0])+weights_hold[1]*(mean_price[1]-(new_price.price_cn+0.2))}} </h2>
                         <p class="text-muted">持仓收益 {{profit_hold_percent}}%</p>
                     </div>
                 </div>
@@ -34,11 +34,11 @@
                 <div class="widget-chart-1 am-cf">
                                   
                     <div class="widget-detail-1" style="float: left;">
-                        <h2 class="p-t-10 m-b-0 {% if (new_price.price_cn-0.6-mean_price[0])<0 %} text-success {% else %} text-danger{% endif %}"> {{weights_hold[0]*(new_price.price_cn-0.6-mean_price[0])}} <span style="font-size:12px;">（10%）</span></h2>
+                        <h2 class="p-t-10 m-b-0 {% if (new_price.price_cn-0.2-mean_price[0])<0 %} text-success {% else %} text-danger{% endif %}"> {{weights_hold[0]*(new_price.price_cn-0.2-mean_price[0])}} <span style="font-size:12px;">（10%）</span></h2>
                         <p class="text-muted"> 先买入: {{weights_hold[0]}} g X {{mean_price[0]}}</p>
                     </div>
                     <div class="widget-detail-1" style="float: right;">
-                        <h2 class="p-t-10 m-b-0 {% if (mean_price[1]-(new_price.price_cn-0.2))<0 %} text-success {% else %} text-danger{% endif %}">{{weights_hold[1]*(mean_price[1]-(new_price.price_cn-0.2))}} <span style="font-size:12px;">（10%）</span></h2>
+                        <h2 class="p-t-10 m-b-0 {% if (mean_price[1]-(new_price.price_cn+0.2))<0 %} text-success {% else %} text-danger{% endif %}">{{weights_hold[1]*(mean_price[1]-(new_price.price_cn+0.2))}} <span style="font-size:12px;">（10%）</span></h2>
                          <p class="text-muted">先卖出: {{weights_hold[1]}} g X {{mean_price[1]}}</p>
                     </div>
                 </div>
@@ -55,7 +55,7 @@
 		            <div class="am-btn-group am-btn-group-xs am-u-sm-12 am-u-md-12">
 		              <button type="button" class="am-btn am-btn-default" data-am-modal="{target: '#doc-modal-1', closeViaDimmer: 0, width: 500, height: 800}"><span class="am-icon-plus"></span> 新增</button>
                   <hr>
-                  <div class="am-u-sm-12 am-u-md-10"> {{new_price.datetime}}  <span class="text-primary">买入{{new_price.price_cn-0.2}}</span>  ----<span class="text-success">卖出{{new_price.price_cn-0.6}}<span></div>
+                  <div class="am-u-sm-12 am-u-md-10"> {{new_price.datetime}}  <span class="text-primary">买入{{new_price.price_cn+0.2}}</span>  ----<span class="text-success">卖出{{new_price.price_cn-0.2}}<span></div>
 		            </div>
 		          </div>
 		        </div>	
@@ -154,7 +154,7 @@
                 {% if trade.end_status == 1 %}
                   <td class="{% if trade.profit<0 %} text-success {% else %} text-danger{% endif %}">{{ trade.profit }}</td>
                 {% else %}
-                  <td class="{% if trade.category*((new_price.price_cn)-0.4-0.2*trade.category-trade.create_price)<0 %} text-success {% else %} text-danger{% endif %}">{{ trade.category*((new_price.price_cn)-0.4-0.2*trade.category-trade.create_price) }} X {{trade.weight}}  </td>
+                  <td class="{% if trade.category*((new_price.price_cn)-0.2*trade.category-trade.create_price)<0 %} text-success {% else %} text-danger{% endif %}">{{ trade.category*((new_price.price_cn)-0.2*trade.category-trade.create_price) }} X {{trade.weight}}  </td>
                 {% endif %}
                 <td class="am-hide-sm-only">{{ trade.year_ratio*100 }}%</td>
                 
