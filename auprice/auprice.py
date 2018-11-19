@@ -53,7 +53,7 @@ def query_db(query, args=(), one=False):
 @app.route('/sendsms')
 def sendsms():
     __business_id = uuid.uuid1()
-    deal_type = request.args.get('deal_type')  # 交易类型
+    deal_type = int(request.args.get('deal_type'))  # 交易类型
     if deal_type == 1:
         deal_type_text = "卖出平仓"  # 1
     else:
@@ -66,7 +66,10 @@ def sendsms():
     params = "{\"deal_type\":\"%s\",\"weight\":\"%s\",\"create_price\":\"%s\",\"end_price\":\"%s\",\"profit\":\"%s\"}" \
         % (deal_type_text, weight, create_price, end_price, profit)
     print(send_sms(__business_id, "13777414593", "王先锋", sms_template, params))
-    return {"result":"短信发送成功"}
+    resp = jsonify(json.dumps({"result":"发送短信成功"}))
+    # 跨域设置
+    resp.headers['Access-Control-Allow-Origin'] = '*'
+    return resp
 
 
 @app.route('/')
