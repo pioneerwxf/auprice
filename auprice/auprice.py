@@ -53,15 +53,22 @@ def query_db(query, args=(), one=False):
 @app.route('/sendsms')
 def sendsms():
     __business_id = uuid.uuid1()
+    category = int(request.args.get('category'))  # 交易类型
     deal_type = int(request.args.get('deal_type'))  # 交易类型
-    if deal_type == 1:
-        deal_type_text = "卖出平仓"  # 1
+    print category
+    print deal_type
+    if category==1 and deal_type == 0:
+        deal_type_text = "买入开仓"  
+    elif category==1 and deal_type == 1:
+        deal_type_text = "买入平仓"  
+    elif category==-1 and deal_type == 0:
+        deal_type_text = "卖出开仓"  
     else:
-        deal_type_text = "买入平仓"  # -1
+        deal_type_text = "卖出平仓"  
     weight = float(request.args.get('weight'))  # 交易重量
     create_price = float(request.args.get('create_price'))  # 起始价格
     end_price = float(request.args.get('end_price'))  # 成交价格
-    profit = round(weight * (end_price-create_price) * deal_type, 2)  # 收益
+    profit = round(weight * (end_price-create_price) * category, 2)  # 收益
     sms_template = "SMS_151545719"   # 成交提醒短信模板
     params = "{\"deal_type\":\"%s\",\"weight\":\"%s\",\"create_price\":\"%s\",\"end_price\":\"%s\",\"profit\":\"%s\"}" \
         % (deal_type_text, weight, create_price, end_price, profit)
@@ -170,13 +177,22 @@ def trades():
         profit_hold_percent = 0
     return render_template('html/trades.html',profit_hold_percent=profit_hold_percent, trades_lists=trades_lists, count=count, new_price=new_price,mean_price=mean_price, profits_done=profits_done, weights_hold=weights_hold, profit_per_year=profit_per_year)
 
+csrf = CSRFProtect()
+@csrf.exempt
 @app.route('/add', methods=['POST'])
 def add_trade():
-    category = int(request.form['category'])
-    weight = float(request.form['weight'])
-    create_status = int(request.form['create_status'])
+    api = request.args.get('api')  # 代表是api的请求
+    if api:
+        category = int(request.json['category'])
+        weight = float(request.json['weight'])
+        create_status = int(request.json['create_status'])
+        create_price = float(request.json['create_price'])
+    else:
+        category = int(request.form['category'])
+        weight = float(request.form['weight'])
+        create_status = int(request.form['create_status'])
+        create_price = float(request.form['create_price'])
     create_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    create_price = float(request.form['create_price'])
     end_status = False
     db = get_db()
     db.execute('insert into trades (category, weight, create_time, create_price, create_status, end_status ) \
@@ -184,9 +200,14 @@ def add_trade():
         [category, weight, create_time, create_price, create_status, end_status])
     db.commit()
     flash('New entry was successfully posted')
-    return redirect(url_for('trades'))
+    if api:
+        resp = jsonify(json.dumps({"result":True}))
+        # 跨域设置
+        resp.headers['Access-Control-Allow-Origin'] = '*'
+        return resp
+    else:
+        return redirect(url_for('trades'))
 
-csrf = CSRFProtect()
 @csrf.exempt
 @app.route('/edit', methods=['POST'])
 def edit_trade():
