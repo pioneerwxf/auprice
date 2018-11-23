@@ -60,11 +60,11 @@ def sendsms():
     if category==1 and deal_type == 0:
         deal_type_text = "买入开仓"  
     elif category==1 and deal_type == 1:
-        deal_type_text = "买入平仓"  
+        deal_type_text = "卖出平仓"  
     elif category==-1 and deal_type == 0:
         deal_type_text = "卖出开仓"  
     else:
-        deal_type_text = "卖出平仓"  
+        deal_type_text = "买入平仓"  
     weight = float(request.args.get('weight'))  # 交易重量
     create_price = float(request.args.get('create_price'))  # 起始价格
     end_price = float(request.args.get('end_price'))  # 成交价格
