@@ -5,6 +5,7 @@ from flask import Flask, request, session, g, redirect, url_for, abort, \
      render_template, flash, jsonify, make_response, send_from_directory
 from flask_wtf.csrf import CSRFProtect
 from sendsms.demo_sms_send import send_sms
+from config import CONFIG
 from datetime import datetime
 app = Flask(__name__) # create the application instance :)
 app.config.from_object(__name__) # load config from current file
@@ -101,9 +102,9 @@ def analyse():
     for trade in trades_lists:
         net_array = {}
         profit_accumulate = profit_accumulate + trade["profit"]
-        cost_time = (datetime.strptime(trade["end_time"], '%Y-%m-%d %H:%M:%S') - datetime(2018, 6, 1, 0, 0)).total_seconds()
-        profit_per_year = round(profit_accumulate/1100000/cost_time*(365*24*3600), 4)
-        net_value = round(profit_accumulate / 1100000 + 1,3)
+        cost_time = (datetime.strptime(trade["end_time"], '%Y-%m-%d %H:%M:%S') - CONFIG['start_time']).total_seconds()
+        profit_per_year = round(profit_accumulate/CONFIG['total_money']/cost_time*(365*24*3600), 4)
+        net_value = round(profit_accumulate / CONFIG['total_money'] + 1,3)
         end_time = trade["end_time"]
 
         net_array["profit_per_year"] = profit_per_year
@@ -167,8 +168,8 @@ def trades():
                 profits_done[1] = trade["profit"] + profits_done[1]
 
     count = len(trades_lists)
-    cost_time = (datetime.now() - datetime(2018, 6, 1, 0, 0)).total_seconds()
-    profit_per_year = round((profits_done[0] + profits_done[1])/1100000 / cost_time * (365*24*3600) * 100, 2)
+    cost_time = (datetime.now() - CONFIG['start_time']).total_seconds()
+    profit_per_year = round((profits_done[0] + profits_done[1])/CONFIG['total_money'] / cost_time * (365*24*3600) * 100, 2)
     hold_profit = weights_hold[0]*(new_price["price_cn"]-0.2-mean_price[0])+weights_hold[1]*(mean_price[1]-(new_price["price_cn"]+0.2))
     hold_cost = weights_hold[0] * mean_price[0] + weights_hold[1] * mean_price[1]
     if hold_cost:
