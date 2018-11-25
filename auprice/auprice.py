@@ -54,6 +54,7 @@ def query_db(query, args=(), one=False):
 @app.route('/sendsms')
 def sendsms():
     __business_id = uuid.uuid1()
+    tradeid = request.args.get('tradeid')  # 交易号，0代表开仓
     category = int(request.args.get('category'))  # 交易类型
     deal_type = int(request.args.get('deal_type'))  # 交易类型
     print category
@@ -65,7 +66,8 @@ def sendsms():
     elif category==-1 and deal_type == 0:
         deal_type_text = "卖出开仓"  
     else:
-        deal_type_text = "买入平仓"  
+        deal_type_text = "买入平仓" 
+    deal_type_text = tradeid+"号：" +  deal_type_text
     weight = float(request.args.get('weight'))  # 交易重量
     create_price = float(request.args.get('create_price'))  # 起始价格
     end_price = float(request.args.get('end_price'))  # 成交价格
@@ -87,10 +89,23 @@ def index():
 
 @app.route('/today')
 def today():
-    pricelists = query_db('select * from pricelists order by id DESC limit 10080') # select 2 days
-    pricelists.reverse()
-    # print pricelists
-    return render_template('html/today_line.html', pricelists=pricelists)
+    api = request.args.get('api')  # 代表是api的请求, 请求最近一次未被测试的数据
+    if api:
+        pricelists = query_db('select * from pricelists where test=0 order by id limit 1') # select 2 days
+        this_test_id = pricelists[0]["id"]
+        db = get_db()
+        db.execute('update pricelists SET test=1 WHERE id=?',[this_test_id])
+        db.commit()
+        flash('flag: this data has been tested')
+        resp = jsonify(json.dumps(pricelists[0]))
+        # 跨域设置
+        resp.headers['Access-Control-Allow-Origin'] = '*'
+        return resp
+    else:
+        pricelists = query_db('select * from pricelists order by id DESC limit 10080') # select 2 days
+        pricelists.reverse()
+        # print pricelists
+        return render_template('html/today_line.html', pricelists=pricelists)
 
 @app.route('/analyse')
 def analyse():

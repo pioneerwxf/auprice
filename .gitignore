@@ -5,3 +5,5 @@ auprice/flaskr.db
 auprice.egg-info/
 auenv/
 config.py
+auprice/test-results
+*.db
