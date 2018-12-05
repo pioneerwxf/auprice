@@ -145,7 +145,7 @@ def get_new_data():
 
 @app.route('/get_user')
 def get_user(*args):    
-    api = request.args.get('api')  # 代表是api的请求
+    api = request.args.get('userapi')  # 代表是api的请求
     name = request.args.get('name')
     if api and name:  # 先处理网络请求
         username = name
@@ -158,6 +158,7 @@ def get_user(*args):
     else:
         # 中文名或英文名都尝试搜索
         user = query_db("select * from user where username='" + username + "' or name='" + username + "' limit 1")
+    print user[0]
     # 用做接口返回json
     if api:
         resp = jsonify(json.dumps(user[0]))
@@ -165,6 +166,7 @@ def get_user(*args):
         resp.headers['Access-Control-Allow-Origin'] = '*'
         return resp
     else:
+        
         return user[0]
 
 @app.route('/history')
@@ -181,6 +183,7 @@ def history():
 @app.route('/trades')
 def trades():
     user = get_user(request.args.get('user'))
+    print user['username']
     new_price = json.loads(get_new_data())
     hold = request.args.get('hold')  # 持仓的key
     api = request.args.get('api')  # 代表是api的请求
