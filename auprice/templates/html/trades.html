@@ -30,7 +30,7 @@
             </div>
             <div class="am-u-md-6">
               <div class="card-box">
-                <h4 class="header-title m-t-0 m-b-30"><a href="/trades?hold=1">持仓收益</a></h4>
+                <h4 class="header-title m-t-0 m-b-30"><a href="/trades?hold=1&user={{user.username}}">持仓收益</a></h4>
                 <div class="widget-chart-1 am-cf">
                                   
                     <div class="widget-detail-1" style="float: left;">
@@ -72,7 +72,7 @@
                     <div class="card-box">                
                       <div class="am-g">
                         <div class="am-u-md-12">
-                          <form class="am-form am-text-sm" action="/add" method="post" >
+                          <form class="am-form am-text-sm" action="/add?user={{user.username}}" method="post" >
                               <div class="am-form-group">
                                 <div class="am-g">
                                   <label class="am-u-md-4 am-u-sm-4 am-md-text-right" for="doc-select-1">类型</label>
@@ -147,8 +147,8 @@
                 <td class="create_status {% if trade.create_status == 0 %} bg-warning text-white {% endif %}" data-id="{{trade.create_status}}">{% if trade.category == 1 %}买入{% else %}卖出{% endif %}{% if trade.create_status == 1 %}开仓{% elif trade.create_status == 0 %}挂单{% endif %}</td>
                 <td class="am-hide-sm-only create_time" data-id="{{trade.create_time}}">{{ trade.create_time }}</td>
                 <td class="weight" data-id="{{trade.weight}}">{{ trade.weight }} g</td>
-                <td class="create_price" data-id="{{trade.create_price}}">{{ trade.create_price }}</td>
-                <td class="am-hide-sm-only end_price" data-id="{% if trade.end_price %}{{trade.end_price}}{% endif %}">{% if trade.end_price %}{{trade.end_price}}{% endif %}</td>
+                <td class="create_price" data-id="{{trade.create_price}}">{{ trade.create_price }}({{trade.price_for}})</td>
+                <td class="am-hide-sm-only end_price" data-id="{% if trade.end_price %}{{trade.end_price}}{% endif %}">{% if trade.end_price %}{{trade.end_price}}（{{trade.end_price-trade.create_price}}）{% endif %}</td>
                 <td class="am-hide-sm-only end_time" data-id="{% if trade.end_time %}{{ trade.end_time }}{% endif %}">{% if trade.end_time %}{{ trade.end_time }}{% endif %}</td>
                 <td class="am-hide-sm-only end_status {% if trade.end_status == 0 %} bg-warning text-white {% endif %}" data-id="{{trade.end_status}}">{% if trade.end_status == 1 %}{% if trade.category == 1 %}卖出{% else %}买入{% endif %}{% if trade.end_status == 1 %}平仓{% elif trade.end_status == 0 %}挂单{% endif %}{% endif %}</td>
                 {% if trade.end_status == 1 %}
@@ -181,7 +181,7 @@
                       <div class="card-box">                
                         <div class="am-g">
                           <div class="am-u-md-12">
-                            <form class="edit-form" action="/edit" method="post" >
+                            <form class="edit-form" action="/edit?user={{user.username}}" method="post" >
                                 <input class="tradeid" name="tradeid" type="hidden">
                                 <div class="am-form-group">
                                   <div class="am-g">

@@ -8,7 +8,6 @@ from bs4 import BeautifulSoup
 from auprice import app
 from sendsms.demo_sms_send import send_sms
 manager = Manager(app)
-
 # Load default config and override config from an environment variable
 app.config.update(dict(
     DATABASE=os.path.join(app.root_path, 'flaskr.db'),

@@ -80,19 +80,19 @@
 	                    <!-- End User -->
 	            
 						 <ul class="am-list admin-sidebar-list">
-						    <li><a href="/"><span class="am-icon-home"></span> Home</a></li>
+						    <li><a href="/?user={{user.username}}"><span class="am-icon-home"></span> Home</a></li>
 						    <li class="admin-parent">
 						      <a class="am-cf" data-am-collapse="{target: '#collapse-nav1'}"><span class="am-icon-table"></span> Trades <span class="am-icon-angle-right am-fr am-margin-right"></span></a>
 						      <ul class="am-list am-collapse admin-sidebar-sub am-in" id="collapse-nav1">
-						        <li><a href="/trades">Records</a></li>
+						        <li><a href="/trades?user={{user.username}}">Records</a></li>
 						      </ul>
 						    </li>
 						    <li class="admin-parent">
 						      <a class="am-cf" data-am-collapse="{target: '#collapse-nav2'}"><i class="am-icon-line-chart" aria-hidden="true"></i> Graphs <span class="am-icon-angle-right am-fr am-margin-right"></span></a>
 						      <ul class="am-list am-collapse admin-sidebar-sub am-in" id="collapse-nav2">
-						        <li><a href="/today" class="am-cf"> Recent</span></a></li>
-						        <li><a href="/history" class="am-cf"> History</span></a></li>
-						        <li><a href="/analyse" class="am-cf"> Analyse</span></a></li>
+						        <li><a href="/today?user={{user.username}}" class="am-cf"> Recent</span></a></li>
+						        <li><a href="/history?user={{user.username}}" class="am-cf"> History</span></a></li>
+						        <li><a href="/analyse?user={{user.username}}" class="am-cf"> Analyse</span></a></li>
 						      </ul>
 						    </li>
 						    

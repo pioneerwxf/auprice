@@ -12,17 +12,28 @@
 --   price_cn float not null,
 -- );
 
-drop table if exists trades;
-create table trades (
+-- drop table if exists trades;
+-- create table trades (
+--   id integer primary key autoincrement,
+--   category integer not null, 
+--   weight float not null,
+--   create_time timestamp,
+--   create_price float not null,
+--   create_status boolean not null,
+--   end_time timestamp,
+--   end_price float,
+--   end_status boolean, 
+--   profit float,
+--   year_ratio float
+-- );
+
+drop table if exists user;
+create table user (
   id integer primary key autoincrement,
-  category integer not null, 
-  weight float not null,
+  username varchar not null, 
+  name varchar not null,
+  password varchar not null,
+  phone varchar not null,
   create_time timestamp,
-  create_price float not null,
-  create_status boolean not null,
-  end_time timestamp,
-  end_price float,
-  end_status boolean, 
-  profit float,
-  year_ratio float
+  investment integer not null
 );

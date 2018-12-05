@@ -55,10 +55,14 @@ def query_db(query, args=(), one=False):
 def sendsms():
     __business_id = uuid.uuid1()
     tradeid = request.args.get('tradeid')  # 交易号，0代表开仓
+    if tradeid:
+        this_trade = query_db('select * from trades where id='+str(tradeid))
+        this_user = query_db('select * from user where id='+str(this_trade[0]["userid"]))
+        phone = this_user[0]['phone']
+    else:
+        phone = '13777414593'
     category = int(request.args.get('category'))  # 交易类型
     deal_type = int(request.args.get('deal_type'))  # 交易类型
-    print category
-    print deal_type
     if category==1 and deal_type == 0:
         deal_type_text = "买入开仓"  
     elif category==1 and deal_type == 1:
@@ -75,7 +79,8 @@ def sendsms():
     sms_template = "SMS_151545719"   # 成交提醒短信模板
     params = "{\"deal_type\":\"%s\",\"weight\":\"%s\",\"create_price\":\"%s\",\"end_price\":\"%s\",\"profit\":\"%s\"}" \
         % (deal_type_text, weight, create_price, end_price, profit)
-    print(send_sms(__business_id, "13777414593", "王先锋", sms_template, params))
+    print(send_sms(__business_id, phone, '王先锋', sms_template, params))  # 签名不能更改！！
+    print phone
     resp = jsonify(json.dumps({"result":"发送短信成功"}))
     # 跨域设置
     resp.headers['Access-Control-Allow-Origin'] = '*'
@@ -84,17 +89,19 @@ def sendsms():
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    user = get_user(request.args.get('user')) # 尝试获取账户英文名
+    return render_template('index.html', user=user)
 
 
 @app.route('/today')
 def today():
+    user = get_user(request.args.get('user'))
     api = request.args.get('api')  # 代表是api的请求, 请求最近一次未被测试的数据
     if api:
         pricelists = query_db('select * from pricelists where test=0 order by id limit 1') # select 2 days
         this_test_id = pricelists[0]["id"]
         db = get_db()
-        db.execute('update pricelists SET test=1 WHERE id=?',[this_test_id])
+        db.execute('update pricelists SET test=1 WHERE id>=? and id<?',[this_test_id,(int(this_test_id+10))])
         db.commit()
         flash('flag: this data has been tested')
         resp = jsonify(json.dumps(pricelists[0]))
@@ -105,10 +112,11 @@ def today():
         pricelists = query_db('select * from pricelists order by id DESC limit 10080') # select 2 days
         pricelists.reverse()
         # print pricelists
-        return render_template('html/today_line.html', pricelists=pricelists)
+        return render_template('html/today_line.html', pricelists=pricelists,user=user)
 
 @app.route('/analyse')
 def analyse():
+    user = get_user(request.args.get('user'))
     trades_lists = query_db('select * from trades where id>72 and end_status=1 order by end_time')
     profit_accumulate_list = []
     profit_accumulate = 0
@@ -126,25 +134,40 @@ def analyse():
         net_array["value"] = net_value
         net_array["end_time"] = end_time
         net_value_list.append(net_array)
-    return render_template('html/analyse_line.html', net_value_list=net_value_list)
+    return render_template('html/analyse_line.html', net_value_list=net_value_list,user=user)
 
 @app.route('/get_new_data')
 def get_new_data():
     price = query_db('select * from pricelists order by id DESC limit 1')
     return json.dumps(price[0])
 
+def get_user(username):
+    defaut_user = query_db("select * from user where id=1")
+    if not username:
+        # user default user
+        user = defaut_user
+    else:
+        # 中文名或英文名都尝试搜索
+        user = query_db("select * from user where username='" + username + "' or name='" + username + "' limit 1")
+    if user:
+        return user[0]
+    else:
+        return defaut_user[0]
+
 @app.route('/history')
 def history():
+    user = get_user(request.args.get('user'))
     pricelists = query_db('select id, datetime, price_cn from history_prices order by utctime')
     dayslists = []
     interval = 100
     for item in pricelists:
         if item["id"] % interval == 0:
             dayslists.append(item) 
-    return render_template('html/history_line.html', pricelists=dayslists)
+    return render_template('html/history_line.html', pricelists=dayslists,user=user)
 
 @app.route('/trades')
 def trades():
+    user = get_user(request.args.get('user'))
     new_price = json.loads(get_new_data())
     hold = request.args.get('hold')  # 持仓的key
     api = request.args.get('api')  # 代表是api的请求
@@ -155,7 +178,8 @@ def trades():
             condition = condition + " and end_status!=1"
         else:
             condition = "end_status!=1"
-        trades_lists = query_db('select * from trades where ' + condition + ' order by category, create_price DESC')
+        trades_lists = query_db("select * from trades where " + condition + " and userid='" + str(user["id"]) + "' \
+            order by category, create_price DESC")
         # 用做接口返回json
         if api:
             resp = jsonify(json.dumps(trades_lists))
@@ -163,7 +187,7 @@ def trades():
             resp.headers['Access-Control-Allow-Origin'] = '*'
             return resp
     else:
-        trades_lists = query_db('select * from trades order by end_status, create_time DESC')
+        trades_lists = query_db("select * from trades where userid='" + str(user["id"]) + "' order by end_status, create_time DESC")
     profits_done = [0,0] # 已成交收益
     weights_hold = [0,0] # 持仓重量，[先买入, 先卖出]
     mean_price = [0,0] # 
@@ -183,20 +207,27 @@ def trades():
                 profits_done[1] = trade["profit"] + profits_done[1]
 
     count = len(trades_lists)
-    cost_time = (datetime.now() - CONFIG['start_time']).total_seconds()
-    profit_per_year = round((profits_done[0] + profits_done[1])/CONFIG['total_money'] / cost_time * (365*24*3600) * 100, 2)
+    if trades_lists:
+        now_time = datetime.strptime(trades_lists[0]["create_time"],"%Y-%m-%d %H:%M:%S")
+    else:
+        now_time = datetime.now()
+    start_time = datetime.strptime(user['create_time'], '%Y-%m-%d %H:%M:%S')
+    print start_time
+    cost_time = (now_time - start_time).total_seconds()
+    profit_per_year = round((profits_done[0] + profits_done[1])/user['investment'] / cost_time * (365*24*3600) * 100, 2)
     hold_profit = weights_hold[0]*(new_price["price_cn"]-0.2-mean_price[0])+weights_hold[1]*(mean_price[1]-(new_price["price_cn"]+0.2))
     hold_cost = weights_hold[0] * mean_price[0] + weights_hold[1] * mean_price[1]
     if hold_cost:
         profit_hold_percent = round(hold_profit / hold_cost * 100, 2)
     else:
         profit_hold_percent = 0
-    return render_template('html/trades.html',profit_hold_percent=profit_hold_percent, trades_lists=trades_lists, count=count, new_price=new_price,mean_price=mean_price, profits_done=profits_done, weights_hold=weights_hold, profit_per_year=profit_per_year)
+    return render_template('html/trades.html',user=user, profit_hold_percent=profit_hold_percent, trades_lists=trades_lists, count=count, new_price=new_price,mean_price=mean_price, profits_done=profits_done, weights_hold=weights_hold, profit_per_year=profit_per_year)
 
 csrf = CSRFProtect()
 @csrf.exempt
 @app.route('/add', methods=['POST'])
 def add_trade():
+    user = get_user(request.args.get('user'))# 尝试获取账户名
     api = request.args.get('api')  # 代表是api的请求
     if api:
         category = int(request.json['category'])
@@ -211,9 +242,9 @@ def add_trade():
     create_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     end_status = False
     db = get_db()
-    db.execute('insert into trades (category, weight, create_time, create_price, create_status, end_status ) \
-        values (?, ?, ?, ?, ?, ?)',
-        [category, weight, create_time, create_price, create_status, end_status])
+    db.execute('insert into trades (category, weight, create_time, create_price, create_status, end_status, userid ) \
+        values (?, ?, ?, ?, ?, ?, ?)',
+        [category, weight, create_time, create_price, create_status, end_status, user["id"]])
     db.commit()
     flash('New entry was successfully posted')
     if api:
@@ -222,11 +253,12 @@ def add_trade():
         resp.headers['Access-Control-Allow-Origin'] = '*'
         return resp
     else:
-        return redirect(url_for('trades'))
+        return redirect(url_for('trades',user=user['username']))
 
 @csrf.exempt
 @app.route('/edit', methods=['POST'])
 def edit_trade():
+    user = get_user(request.args.get('user'))# 尝试获取账户名
     api = request.args.get('api')  # 代表是api的请求
     if api:
         tradeid = int(request.json['tradeid'])
@@ -279,7 +311,7 @@ def edit_trade():
         resp.headers['Access-Control-Allow-Origin'] = '*'
         return resp
     else:
-        return redirect(url_for('trades'))
+        return redirect(url_for('trades',user=user['username']))
 
 @app.route('/del', methods=['GET'])
 def del_trade():

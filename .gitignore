@@ -3,6 +3,7 @@
 MANIFEST.in
 auprice/flaskr.db
 auprice.egg-info/
+auprice/test.py
 auenv/
 config.py
 auprice/test-results
