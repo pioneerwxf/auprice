@@ -143,7 +143,14 @@ def get_new_data():
     price = query_db('select * from pricelists order by id DESC limit 1')
     return json.dumps(price[0])
 
-def get_user(username):
+@app.route('/get_user')
+def get_user(*args):    
+    api = request.args.get('api')  # 代表是api的请求
+    name = request.args.get('name')
+    if api and name:  # 先处理网络请求
+        username = name
+    else:
+        username = args[0]
     defaut_user = query_db("select * from user where id=1")
     if not username:
         # user default user
@@ -151,10 +158,14 @@ def get_user(username):
     else:
         # 中文名或英文名都尝试搜索
         user = query_db("select * from user where username='" + username + "' or name='" + username + "' limit 1")
-    if user:
-        return user[0]
+    # 用做接口返回json
+    if api:
+        resp = jsonify(json.dumps(user[0]))
+        # 跨域设置
+        resp.headers['Access-Control-Allow-Origin'] = '*'
+        return resp
     else:
-        return defaut_user[0]
+        return user[0]
 
 @app.route('/history')
 def history():
