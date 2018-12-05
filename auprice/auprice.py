@@ -117,7 +117,7 @@ def today():
 @app.route('/analyse')
 def analyse():
     user = get_user(request.args.get('user'))
-    trades_lists = query_db('select * from trades where id>72 and end_status=1 order by end_time')
+    trades_lists = query_db("select * from trades where end_status=1 and userid=" + str(user["id"])+ " order by end_time")
     profit_accumulate_list = []
     profit_accumulate = 0
     time_list = []
@@ -125,9 +125,11 @@ def analyse():
     for trade in trades_lists:
         net_array = {}
         profit_accumulate = profit_accumulate + trade["profit"]
-        cost_time = (datetime.strptime(trade["end_time"], '%Y-%m-%d %H:%M:%S') - CONFIG['start_time']).total_seconds()
-        profit_per_year = round(profit_accumulate/CONFIG['total_money']/cost_time*(365*24*3600), 4)
-        net_value = round(profit_accumulate / CONFIG['total_money'] + 1,3)
+        start_time = datetime.strptime(user['create_time'], '%Y-%m-%d %H:%M:%S')
+        end_time = datetime.strptime(trade["end_time"], '%Y-%m-%d %H:%M:%S')
+        cost_time = (end_time - start_time).total_seconds()
+        profit_per_year = round(profit_accumulate/user['investment']/cost_time*(365*24*3600), 4)
+        net_value = round(profit_accumulate / user['investment'] + 1,3)
         end_time = trade["end_time"]
 
         net_array["profit_per_year"] = profit_per_year
@@ -187,7 +189,7 @@ def trades():
             resp.headers['Access-Control-Allow-Origin'] = '*'
             return resp
     else:
-        trades_lists = query_db("select * from trades where userid='" + str(user["id"]) + "' order by end_status, create_time DESC")
+        trades_lists = query_db("select * from trades where userid='" + str(user["id"]) + "' order by end_status, id DESC")
     profits_done = [0,0] # 已成交收益
     weights_hold = [0,0] # 持仓重量，[先买入, 先卖出]
     mean_price = [0,0] # 
@@ -212,7 +214,6 @@ def trades():
     else:
         now_time = datetime.now()
     start_time = datetime.strptime(user['create_time'], '%Y-%m-%d %H:%M:%S')
-    print start_time
     cost_time = (now_time - start_time).total_seconds()
     profit_per_year = round((profits_done[0] + profits_done[1])/user['investment'] / cost_time * (365*24*3600) * 100, 2)
     hold_profit = weights_hold[0]*(new_price["price_cn"]-0.2-mean_price[0])+weights_hold[1]*(mean_price[1]-(new_price["price_cn"]+0.2))
