@@ -55,7 +55,7 @@ def query_db(query, args=(), one=False):
 def sendsms():
     __business_id = uuid.uuid1()
     tradeid = request.args.get('tradeid')  # 交易号，0代表开仓
-    if tradeid:
+    if tradeid > 0:
         this_trade = query_db('select * from trades where id='+str(tradeid))
         this_user = query_db('select * from user where id='+str(this_trade[0]["userid"]))
         phone = this_user[0]['phone']
@@ -80,7 +80,6 @@ def sendsms():
     params = "{\"deal_type\":\"%s\",\"weight\":\"%s\",\"create_price\":\"%s\",\"end_price\":\"%s\",\"profit\":\"%s\"}" \
         % (deal_type_text, weight, create_price, end_price, profit)
     print(send_sms(__business_id, phone, '王先锋', sms_template, params))  # 签名不能更改！！
-    print phone
     resp = jsonify(json.dumps({"result":"发送短信成功"}))
     # 跨域设置
     resp.headers['Access-Control-Allow-Origin'] = '*'
@@ -146,7 +145,7 @@ def get_new_data():
 @app.route('/get_user')
 def get_user(*args):    
     api = request.args.get('userapi')  # 代表是api的请求
-    name = request.args.get('name')
+    name = request.args.get('name')  # name代表是中文实名
     if api and name:  # 先处理网络请求
         username = name
     else:
@@ -158,7 +157,6 @@ def get_user(*args):
     else:
         # 中文名或英文名都尝试搜索
         user = query_db("select * from user where username='" + username + "' or name='" + username + "' limit 1")
-    print user[0]
     # 用做接口返回json
     if api:
         resp = jsonify(json.dumps(user[0]))
@@ -249,17 +247,19 @@ def add_trade():
         weight = float(request.json['weight'])
         create_status = int(request.json['create_status'])
         create_price = float(request.json['create_price'])
+        price_for = float(request.json['price_for'])  # 记录当前开仓的触发价格
     else:
         category = int(request.form['category'])
         weight = float(request.form['weight'])
         create_status = int(request.form['create_status'])
         create_price = float(request.form['create_price'])
+        price_for = create_price
     create_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     end_status = False
     db = get_db()
-    db.execute('insert into trades (category, weight, create_time, create_price, create_status, end_status, userid ) \
+    db.execute('insert into trades (category, weight, create_time, create_price, price_for, create_status, end_status, userid ) \
         values (?, ?, ?, ?, ?, ?, ?)',
-        [category, weight, create_time, create_price, create_status, end_status, user["id"]])
+        [category, weight, create_time, create_price, price_for, create_status, end_status, user["id"]])
     db.commit()
     flash('New entry was successfully posted')
     if api:
