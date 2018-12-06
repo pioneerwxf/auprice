@@ -258,7 +258,7 @@ def add_trade():
     end_status = False
     db = get_db()
     db.execute('insert into trades (category, weight, create_time, create_price, price_for, create_status, end_status, userid ) \
-        values (?, ?, ?, ?, ?, ?, ?)',
+        values (?, ?, ?, ?, ?, ?, ?, ?)',
         [category, weight, create_time, create_price, price_for, create_status, end_status, user["id"]])
     db.commit()
     flash('New entry was successfully posted')
