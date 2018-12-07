@@ -55,12 +55,12 @@ def query_db(query, args=(), one=False):
 def sendsms():
     __business_id = uuid.uuid1()
     tradeid = request.args.get('tradeid')  # 交易号，0代表开仓
-    if tradeid > 0:
+    if tradeid == '0':
+        phone = '13777414593'
+    else:
         this_trade = query_db('select * from trades where id='+str(tradeid))
         this_user = query_db('select * from user where id='+str(this_trade[0]["userid"]))
         phone = this_user[0]['phone']
-    else:
-        phone = '13777414593'
     category = int(request.args.get('category'))  # 交易类型
     deal_type = int(request.args.get('deal_type'))  # 交易类型
     if category==1 and deal_type == 0:
