@@ -285,6 +285,26 @@ def add_trade():
         return redirect(url_for('trades',user=user['username']))
 
 @csrf.exempt
+@app.route('/add_strategy', methods=['POST'])
+def add_strategy():
+    user = get_user(request.args.get('user'))# 尝试获取账户名
+    api = request.args.get('api')  # 代表是api的请求
+    if api:
+        content = request.json['content']
+        create_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        db = get_db()
+        db.execute('insert into strategy (content, create_time, userid ) values (?, ?, ?)',
+            [content, create_time, user["id"]])
+        db.commit()
+        flash('New strategy was successfully posted')
+        resp = jsonify(json.dumps({"result":True}))
+        # 跨域设置
+        resp.headers['Access-Control-Allow-Origin'] = '*'
+        return resp
+    else:
+        return jsonify(json.dumps({"result":"Faild"}))
+
+@csrf.exempt
 @app.route('/edit', methods=['POST'])
 def edit_trade():
     user = get_user(request.args.get('user'))# 尝试获取账户名
