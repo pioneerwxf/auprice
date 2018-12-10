@@ -91,6 +91,20 @@ def index():
     user = get_user(request.args.get('user')) # 尝试获取账户英文名
     return render_template('index.html', user=user)
 
+@app.route('/get_price')
+def get_price():
+    api = request.args.get('api')  # 代表是api的请求, 请求最近一次未被测试的数据
+    datefrom = request.args.get('from')
+    dateto = request.args.get('to')
+    if api:
+        if datefrom and dateto:
+            pricelists = query_db("select * from pricelists where datetime>='"+datefrom+"' and datetime<='"+dateto+"'") # select n days
+        else:
+            pricelists = query_db('select * from pricelists order by id DESC limit 1') # select the last one entry
+        resp = jsonify(json.dumps(pricelists))
+        # 跨域设置
+        resp.headers['Access-Control-Allow-Origin'] = '*'
+        return resp
 
 @app.route('/today')
 def today():
