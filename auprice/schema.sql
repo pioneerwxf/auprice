@@ -41,6 +41,7 @@
 drop table if exists strategy;
 create table strategy (
   id integer primary key autoincrement,
-  content text not null, 
+  content text not null,
+  userid integer not null,
   create_time timestamp
 );
