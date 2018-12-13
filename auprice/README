@@ -1,0 +1,44 @@
+# README
+
+# 常量
+* 接口网址 https://www.augoto.com
+* 接口标志：api=1
+* 接口用户：user=crc 和用户相关的接口需要这个信息
+
+1. 获取历史价格信息
+	/get_price?api=1&from=datefrom&to=dateto
+	* 输入格式 datefrom，dateto格式为 “2018-12-10 17:24:56”
+	* 返回数据格式[{},{}]
+		例如："[{\"test\": null, \"price_cn\": 277.04, \"id\": 301447, \"datetime\": \"2018-12-10 17:24:56\"}]"
+		其中 test可以忽略，price_cn是中间价，datetime是报价时间；
+    * 如果缺省from和to字段则返回最新一条数据 
+    	例： /get_price?api=1  返回最新一次报价 
+    * todo：
+      	准备增加报价时间是否周末非交易时间
+
+2. 获取某个用户的历史交易信息
+	/trades?hold=1&api=1&user=crc
+	* 返回数据如下：
+		例如："[{\"category\": 1, \"year_ratio\": 0.0, \"price_for\": 270.0, \"weight\": 100.0, \"profit\": 0.0, \"end_price\": null, \"userid\": 3, \"create_status\": 1, \"create_price\": 270.2, \"create_time\": \"2018-12-07 19:17:36\", \"end_time\": null, \"end_status\": 0, \"id\": 316}]"
+		其中：category=1代表看涨，=0代表看跌类型，year_ration 代表这一单的年化收益，price_for代表本次交易的触发价格，weight代表交易重量，profit代表交易利润，end_price 代表交易最终价，userid代表是某个用户的交易，create_status 代表开仓状态（1为成交，0为挂单），create_price是开仓价格，create_time是创建时间，end_time是平仓时间，end_status是平仓状态（1是成交0是挂单），id是本次交易的编号
+
+	* 如果缺省hold=1 则表示当前用户的所有交易（包含持仓的交易）
+		例：trades?api=1&user=crc
+
+3. 获取某个用户的信息：
+	/get_user?userapi=1&name=crc
+	* 返回数据如下：
+		例如："{\"username\": \"crc\", \"name\": \"\\u7a0b\\u82e5\\u5c18\", \"investment\": 10000, \"phone\": \"18516171218\", \"create_time\": \"2018-12-05 00:00:00\", \"password\": \"123456\", \"config\": \"{\\\"up_price_difference\\\":0.5,\\\"down_price_difference\\\":0.5,\\\"price_error\\\":0.05,\\\"range\\\":3,\\\"points\\\":5,\\\"media_point\\\":273}\", \"id\": 3}"
+		其中username是英文账户，name是中文名，investment是投资总额度，phone是手机号用于发成交短信，create_time是投资起始时间，用于计算年化收益，password和config暂时没用；
+	* 注意这里是userapi=1 不是api=1....	
+
+4. 为当前用户增加一条最近交易策略：
+	/add_strategy?api=1&user=crc
+	* post的内容为：content=[{},{},{}...]
+	例如：
+		[	
+			{id: 0, category: 1, create_price: 273.25, weight: 100}, 
+			{id: 10,category: 1, end_price: 274.25, weight: 50}
+		]
+		其中id=0为开仓策略，id>0为平仓策略，category=1为看涨类型，category=-1 为看跌类型， create_price为开仓价格（买入时中间价+0.2，卖出时为中间价-0.2），end_price为平仓价格（买入时中间价+0.2，卖出时为中间价-0.2），weight为开仓和平仓的重量，平仓可以小于开仓的重量，大于则返回error；
+		如果平仓小于开仓时的重量，后台会将开仓的交易记录拆分两单，一次平仓成交，一次等待平仓；
