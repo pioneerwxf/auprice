@@ -27,16 +27,18 @@
 --   year_ratio float
 -- );
 
--- drop table if exists user;
--- create table user (
---   id integer primary key autoincrement,
---   username varchar not null, 
---   name varchar not null,
---   password varchar not null,
---   phone varchar not null,
---   create_time timestamp,
---   investment integer not null
--- );
+drop table if exists user;
+create table user (
+  id integer primary key autoincrement,
+  username varchar not null, 
+  name varchar not null,
+  password varchar not null,
+  phone varchar not null,
+  create_time timestamp,
+  strategy_name text not null,
+  investment integer not null
+  is_active boolean not null,
+);
 
 drop table if exists strategy;
 create table strategy (

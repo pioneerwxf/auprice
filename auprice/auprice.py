@@ -373,6 +373,26 @@ def edit_trade():
     else:
         return redirect(url_for('trades',user=user['username']))
 
+@app.route('/change_user_status')
+def change_user_status():
+    user = get_user(request.args.get('user'))# 尝试获取账户名
+    api = request.args.get('api')  # 代表是api的请求
+    key = request.args.get('key')
+    print key
+    value = 1 - int(user[key])
+    print value
+    db = get_db()
+    db.execute("update user SET "+key+"=? WHERE id=?",
+        [value, user["id"]])
+    db.commit()
+    if api:
+        resp = jsonify(json.dumps({"result":True}))
+        # 跨域设置
+        resp.headers['Access-Control-Allow-Origin'] = '*'
+        return resp
+    else:
+        return redirect(url_for('trades',user=user['username']))
+
 @app.route('/del', methods=['GET'])
 def del_trade():
     tradeid = int(request.args.get('tradeid'))
