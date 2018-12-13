@@ -287,6 +287,9 @@ def add_trade():
         [category, weight, create_time, create_price, price_for, create_status, end_status, user["id"]])
     db.commit()
     flash('New entry was successfully posted')
+
+    # 更新用户的账户系统
+    update_user_balance(user)
     if api:
         resp = jsonify(json.dumps({"result":True}))
         # 跨域设置
@@ -365,6 +368,9 @@ def edit_trade():
         [category, weight, create_time, create_price, create_status, end_time, end_price, end_status, profit, year_ratio,tradeid])
     db.commit()
     flash('New entry was successfully edited')
+
+    # 更新用户的账户系统
+    update_user_balance(user)
     if api:
         resp = jsonify(json.dumps({"result":True}))
         # 跨域设置
@@ -372,6 +378,24 @@ def edit_trade():
         return resp
     else:
         return redirect(url_for('trades',user=user['username']))
+
+def update_user_balance(user):
+    investment = user["investment"]
+    db = get_db()
+    trades_lists = query_db("select * from trades where userid='" + str(user["id"]) + "' order by end_status, id DESC")
+    profits = 0
+    hold_money = 0
+    for trade in trades_lists:
+        if trade["create_status"] and trade["end_status"]:
+            profits = profits + trade["profit"]
+        else:
+            hold_money = hold_money + (trade["create_price"] * trade["weight"])
+    balance = round(investment + profits - hold_money,2)
+    profits = round(profits,2)
+    hold_money = round(hold_money,2)
+    db.execute("update user SET balance=?, profits=?, hold_money=? WHERE id=?", [balance, profits, hold_money, user["id"]])
+    db.commit()
+
 
 @app.route('/change_user_status')
 def change_user_status():

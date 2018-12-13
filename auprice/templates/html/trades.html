@@ -18,12 +18,12 @@
                 <div class="widget-chart-1 am-cf">
                                   
                     <div class="widget-detail-1" style="float: left;">
-                        <h1 style="font-size:50px;" class="p-t-10 m-b-0"> {{profits_done[0]+profits_done[1]}} </h1>
+                        <h1 style="font-size:50px;" class="p-t-10 m-b-0"> {{user.profits}} </h1>
                         <h4>多头 {{profits_done[0]}}, 空头 {{profits_done[1]}}，年化 {{profit_per_year}}%</h4>
                     </div>
                     <div class="widget-detail-1" style="float: right;">
-                        <h2 class="p-t-10 m-b-0 {% if (weights_hold[0]*(new_price.price_cn-0.2-mean_price[0])+weights_hold[1]*(mean_price[1]-(new_price.price_cn+0.2)))<0 %} text-success {% else %} text-danger{% endif %}"> {{weights_hold[0]*(new_price.price_cn-0.2-mean_price[0])+weights_hold[1]*(mean_price[1]-(new_price.price_cn+0.2))}} </h2>
-                        <p class="text-muted">持仓收益 {{profit_hold_percent}}%</p>
+                        <h2 class="p-t-10 m-b-0 text-success">余额：{{user.balance}} </h2>
+                        <p class="text-muted">持仓份额：{{user.hold_money}}</p>
                     </div>
                 </div>
               </div>
