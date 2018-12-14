@@ -308,7 +308,7 @@ def add_strategy():
         db = get_db()
         # 获取最新的策略比对是否一样，一样就不再更新
         strategy = query_db("select * from strategy where userid="+str(user["id"])+" order by id DESC limit 1 ")
-        if len(strategy)>1:
+        if len(strategy)>0:
             latest_content = strategy[0]['content']
         else:
             latest_content = ""
