@@ -311,7 +311,7 @@ def add_strategy():
         if len(strategy)>1:
             latest_content = strategy[0]['content']
         else:
-            latest_content == ""
+            latest_content = ""
 
 
         if latest_content == content :
