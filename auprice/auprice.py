@@ -303,14 +303,17 @@ def add_trade():
 def add_strategy():
     user = get_user(request.args.get('user'))# 尝试获取账户名
     api = request.args.get('api')  # 代表是api的请求
+    content = request.json['content']
     if api:
         db = get_db()
         # 获取最新的策略比对是否一样，一样就不再更新
         strategy = query_db("select * from strategy where userid="+str(user["id"])+" order by id DESC limit 1 ")
-        latest_content = strategy[0]['content']
-        content = request.json['content']
-        print content
-        print latest_content
+        if strategy:
+            latest_content = strategy[0]['content']
+        else:
+            latest_content == ""
+
+        
         if latest_content == content :
             resp = jsonify(json.dumps({"result":"NO Need update strategy"}))
             # 跨域设置
