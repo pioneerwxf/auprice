@@ -304,17 +304,28 @@ def add_strategy():
     user = get_user(request.args.get('user'))# 尝试获取账户名
     api = request.args.get('api')  # 代表是api的请求
     if api:
-        content = request.json['content']
-        create_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         db = get_db()
-        db.execute('insert into strategy (content, create_time, userid ) values (?, ?, ?)',
-            [content, create_time, user["id"]])
-        db.commit()
-        flash('New strategy was successfully posted')
-        resp = jsonify(json.dumps({"result":True}))
-        # 跨域设置
-        resp.headers['Access-Control-Allow-Origin'] = '*'
-        return resp
+        # 获取最新的策略比对是否一样，一样就不再更新
+        strategy = query_db("select * from strategy where userid="+str(user["id"])+" order by id DESC limit 1 ")
+        latest_content = strategy[0]['content']
+        content = request.json['content']
+        print content
+        print latest_content
+        if latest_content == content :
+            resp = jsonify(json.dumps({"result":"NO Need update strategy"}))
+            # 跨域设置
+            resp.headers['Access-Control-Allow-Origin'] = '*'
+            return resp
+        else:
+            create_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            db.execute('insert into strategy (content, create_time, userid ) values (?, ?, ?)',
+                [content, create_time, user["id"]])
+            db.commit()
+            flash('New strategy was successfully posted')
+            resp = jsonify(json.dumps({"result":True}))
+            # 跨域设置
+            resp.headers['Access-Control-Allow-Origin'] = '*'
+            return resp
     else:
         return jsonify(json.dumps({"result":"Faild"}))
 
