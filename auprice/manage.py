@@ -88,37 +88,71 @@ def add_entry():
     price_array = []
     sendsms_time = datetime.datetime.now()
     while True:
-        nowtime = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        aup_price = get_auprice()
-        buy_price = round(aup_price + 0.2,2)
-        sell_price = round(aup_price - 0.2,2)
-        price_array.append(sell_price)
-        if len(price_array) >= 30:  # 监控半小时内的数据 一分钟一次 故数组长度为30即可
-            price_array.pop(0)
-        if len(price_array) >1:
-            if (math.ceil(price_array[-1]) != math.ceil(price_array[-2])) & ((datetime.datetime.now()-sendsms_time).total_seconds()>1800): #10分钟内不重复发短信
-                sendsms(sms_template = "SMS_133964781",nowtime = nowtime, buy_price = buy_price, sell_price = sell_price)
-                sendsms_time = datetime.datetime.now()
-                print "发送整数阈值短信成功"
-        if len(price_array) >= 10:  # 监控10分钟的数据波动，10分钟波动大于0.5元需要关注
-            if (abs(price_array[-1] - price_array[-10]) >= 0.5)  & ((datetime.datetime.now()-sendsms_time).total_seconds()>1800): #10分钟内不重复发短信
-                sendsms(sms_template = "SMS_133979780", float_price = abs(price_array[-1] - price_array[-10]), price_array = str(price_array[-10]) + '~' + str(price_array[-1]))
-                sendsms_time = datetime.datetime.now()
-                print "发送10分钟内波动过大短信成功"
-        if len(price_array) >= 20:  # 监控10分钟的数据波动，10分钟波动大于0.5元需要关注
-            if (abs(price_array[-1] - price_array[-20]) >= 0.5) & ((datetime.datetime.now()-sendsms_time).total_seconds()>1800):
-                sendsms(sms_template = "SMS_133969878", time_interval = "20", float_price = abs(price_array[-1] - price_array[-20]), price_array = str(price_array[-20]) + '~' + str(price_array[-1]))
-                sendsms_time = datetime.datetime.now()
-                print "发送20分钟内波动过大短信成功"
-        # if len(price_array) >= 30:  # 监控10分钟的数据波动，10分钟波动大于0.5元需要关注
-        #     if abs(price_array[-1] - price_array[-30]) >= 0.5 :
-        #         sendsms(sms_template = "SMS_133969878", time_interval = "30", float_price = abs(price_array[-1] - price_array[-30]), price_array = str(price_array[-30]) + '~' + str(price_array[-1]))
-        #         print "发送30分钟内波动过大短信成功"
-        db.execute('insert into pricelists (datetime, price_cn) values (?, ?)',
-                     [nowtime, aup_price])
-        db.commit()
-        print price_array   # 打印监控的价格数组
+        now = datetime.datetime.now()
+        nowtime = now.strftime("%Y-%m-%d %H:%M:%S")
+        is_week = is_weekend(now)
+        if not is_week:
+            aup_price = get_auprice()
+            buy_price = round(aup_price + 0.2,2)
+            sell_price = round(aup_price - 0.2,2)
+            price_array.append(sell_price)
+            if len(price_array) >= 30:  # 监控半小时内的数据 一分钟一次 故数组长度为30即可
+                price_array.pop(0)
+            if len(price_array) >1:
+                if (math.ceil(price_array[-1]) != math.ceil(price_array[-2])) & ((datetime.datetime.now()-sendsms_time).total_seconds()>1800): #10分钟内不重复发短信
+                    sendsms(sms_template = "SMS_133964781",nowtime = nowtime, buy_price = buy_price, sell_price = sell_price)
+                    sendsms_time = datetime.datetime.now()
+                    print "发送整数阈值短信成功"
+            if len(price_array) >= 10:  # 监控10分钟的数据波动，10分钟波动大于0.5元需要关注
+                if (abs(price_array[-1] - price_array[-10]) >= 0.5)  & ((datetime.datetime.now()-sendsms_time).total_seconds()>1800): #10分钟内不重复发短信
+                    sendsms(sms_template = "SMS_133979780", float_price = abs(price_array[-1] - price_array[-10]), price_array = str(price_array[-10]) + '~' + str(price_array[-1]))
+                    sendsms_time = datetime.datetime.now()
+                    print "发送10分钟内波动过大短信成功"
+            if len(price_array) >= 20:  # 监控10分钟的数据波动，10分钟波动大于0.5元需要关注
+                if (abs(price_array[-1] - price_array[-20]) >= 0.5) & ((datetime.datetime.now()-sendsms_time).total_seconds()>1800):
+                    sendsms(sms_template = "SMS_133969878", time_interval = "20", float_price = abs(price_array[-1] - price_array[-20]), price_array = str(price_array[-20]) + '~' + str(price_array[-1]))
+                    sendsms_time = datetime.datetime.now()
+                    print "发送20分钟内波动过大短信成功"
+            # if len(price_array) >= 30:  # 监控10分钟的数据波动，10分钟波动大于0.5元需要关注
+            #     if abs(price_array[-1] - price_array[-30]) >= 0.5 :
+            #         sendsms(sms_template = "SMS_133969878", time_interval = "30", float_price = abs(price_array[-1] - price_array[-30]), price_array = str(price_array[-30]) + '~' + str(price_array[-1]))
+            #         print "发送30分钟内波动过大短信成功"
+            db.execute('insert into pricelists (datetime, price_cn) values (?, ?)',
+                         [nowtime, aup_price])
+            db.commit()
+            print price_array   # 打印监控的价格数组
+        else:
+            print "周末时间不记录"
         time.sleep(time_interval)   # Delay for time_interval seconds.
+
+@manager.command
+def del_weekend_data():
+    db = get_db()
+    pricelists = query_db("select * from pricelists where id>0")
+    for p in pricelists:
+        dt = datetime.datetime.strptime(p["datetime"],"%Y-%m-%d %H:%M:%S")
+        is_w = is_weekend(dt)
+        # print p["datetime"],is_w
+        if is_w:
+            print p["datetime"],"已删除", p["id"]
+            db.execute('delete from pricelists where id=?',[p["id"]])
+            db.commit()
+
+def is_weekend(nowtime):
+    d = nowtime.weekday()+1
+    if d==6:
+        ranges = ["040000","235959"] # 周六早4点后不交易
+    elif d==7:                       # 周日不交易
+        return True
+    elif d==1:
+        ranges = ["000000","070000"] # 周六早7点前不交易
+    else:
+        return False
+    hms = nowtime.strftime("%H%M%S")
+    if hms >= ranges[0] and hms <= ranges[1]:
+        return True
+    else:
+        return False
 
 @manager.command
 def add_history_entry():
