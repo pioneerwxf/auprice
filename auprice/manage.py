@@ -149,7 +149,7 @@ def is_weekend(nowtime):
     else:
         return False
     hms = nowtime.strftime("%H%M%S")
-    if hms >= ranges[0] and hms <= ranges[1]:
+    if hms > ranges[0] and hms < ranges[1]:
         return True
     else:
         return False

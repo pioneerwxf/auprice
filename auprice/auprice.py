@@ -107,9 +107,12 @@ def get_price():
     api = request.args.get('api')  # 代表是api的请求, 请求最近一次未被测试的数据
     datefrom = request.args.get('from')
     dateto = request.args.get('to')
+    num = request.args.get('num')
     if api:
         if datefrom and dateto:
             pricelists = query_db("select * from pricelists where datetime>='"+datefrom+"' and datetime<='"+dateto+"'") # select n days
+        elif num:
+            pricelists = query_db('select * from pricelists order by id DESC limit ' + num) # select n 个data
         else:
             pricelists = query_db('select * from pricelists order by id DESC limit 1') # select the last one entry
         resp = jsonify(json.dumps(pricelists))

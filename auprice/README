@@ -13,8 +13,8 @@
 		其中 test可以忽略，price_cn是中间价，datetime是报价时间；
     * 如果缺省from和to字段则返回最新一条数据 
     	例： /get_price?api=1  返回最新一次报价 
-    * todo：
-      	准备增加报价时间是否周末非交易时间
+    * /get_price?api=1&num=10
+    	如果给出num参数，则直接返回最近的num条数据
 
 2. 获取某个用户的历史交易信息
 	/trades?hold=1&api=1&user=crc
