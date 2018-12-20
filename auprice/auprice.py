@@ -7,6 +7,7 @@ from flask_wtf.csrf import CSRFProtect
 from sendsms.demo_sms_send import send_sms
 from config import CONFIG
 from datetime import datetime
+from strategy import *
 app = Flask(__name__) # create the application instance :)
 app.config.from_object(__name__) # load config from current file
 
@@ -291,8 +292,9 @@ def add_trade():
     db.commit()
     flash('New entry was successfully posted')
 
-    # 更新用户的账户系统
+    # 更新用户的账户系统、策略系统
     update_user_balance(user)
+    update_strategy(user)
     if api:
         resp = jsonify(json.dumps({"result":True}))
         # 跨域设置
@@ -386,8 +388,9 @@ def edit_trade():
     db.commit()
     flash('New entry was successfully edited')
 
-    # 更新用户的账户系统
+    # 更新用户的账户系统、策略系统
     update_user_balance(user)
+    update_strategy(user)
     if api:
         resp = jsonify(json.dumps({"result":True}))
         # 跨域设置
