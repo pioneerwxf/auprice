@@ -89,6 +89,7 @@ def gen_new_strategy(current_time,current_price,user):
     # 在当前时间，对于当前空间，进行布点扫描
     avg_price = get_avg_price(current_time, 1) # 使用1天的均值作为中间值
     media_point = round(float(avg_price) / point_distance,0) * point_distance
+    update_config(media_point,user)  # 更新用户的config
     # 1. 如果当余额大于零则继续布局开仓
     if balance > 0:
         # 当前价格落在交易区间以外时，即停止开仓交易，说明急涨急跌，以至均价跟不上变化，可以暂停交易，也可以改变策略
@@ -175,6 +176,13 @@ def update_strategy(user):
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     current_price = get_new_price()
     gen_new_strategy(current_time,current_price,user)
+
+def update_config(media_point, user):
+    CONFIG = json.loads(user["config"])
+    CONFIG["media_point"] = media_point
+    config = json.dumps(CONFIG)
+    db = get_db()
+    db.execute("update user SET config=? WHERE id=?", [config, user["id"]])
 
 # 每15分钟run一次，为所有用户更新策略
 @manager.command
