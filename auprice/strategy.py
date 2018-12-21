@@ -68,7 +68,7 @@ def get_deal_space():
 
 # 产生一次新的策略，可被调用，可以crontab执行
 def gen_new_strategy(current_time,current_price,user):
-    print "为用户：", user["name"] , "计算最新策略空间"
+    print "为用户：", user["username"] , "计算最新策略空间"
     strategy = []
     user = get_user(user["username"])   # 重新获取user的信息，可能balance已经更新过
     if not user:
@@ -183,6 +183,7 @@ def update_config(media_point, user):
     config = json.dumps(CONFIG)
     db = get_db()
     db.execute("update user SET config=? WHERE id=?", [config, user["id"]])
+    db.commit()
 
 # 每15分钟run一次，为所有用户更新策略
 @manager.command
