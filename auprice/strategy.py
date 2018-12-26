@@ -85,7 +85,18 @@ def gen_new_strategy(current_time,current_price,user):
     left_points = 0 # 初始化没有下单的位置点数
     holds = query_db('select * from trades where end_status!=1 and userid='+str(user["id"])+' order by category, create_price DESC')
     
-
+    # 2 持仓策略，调整预期平仓价格
+    # 获取合理的交易价差, 返回值为[up_space, down_space]
+    # deal_space = get_deal_space
+    deal_space = [CONFIG["up_price_difference"],CONFIG["down_price_difference"]]
+    up_space = deal_space[0]
+    down_space = deal_space[1]
+    for hold in holds:
+        if hold["category"] == 1:
+            hold["end_price"] = hold["create_price"] + up_space
+        else:
+            hold["end_price"] = hold["create_price"] - down_space
+        strategy.append(hold)
     # 在当前时间，对于当前空间，进行布点扫描
     avg_price = get_avg_price(current_time, 1) # 使用1天的均值作为中间值
     media_point = round(float(avg_price) / point_distance,0) * point_distance
@@ -132,15 +143,15 @@ def gen_new_strategy(current_time,current_price,user):
     # 2 持仓策略，调整预期平仓价格
     # 获取合理的交易价差, 返回值为[up_space, down_space]
     # deal_space = get_deal_space
-    deal_space = [CONFIG["up_price_difference"],CONFIG["down_price_difference"]]
-    up_space = deal_space[0]
-    down_space = deal_space[1]
-    for hold in holds:
-        if hold["category"] == 1:
-            hold["end_price"] = hold["create_price"] + up_space
-        else:
-            hold["end_price"] = hold["create_price"] - down_space
-        strategy.append(hold)
+    #deal_space = [CONFIG["up_price_difference"],CONFIG["down_price_difference"]]
+    #up_space = deal_space[0]
+    #down_space = deal_space[1]
+    #for hold in holds:
+    #    if hold["category"] == 1:
+    #        hold["end_price"] = hold["create_price"] + up_space
+    #    else:
+    #        hold["end_price"] = hold["create_price"] - down_space
+    #    strategy.append(hold)
 
     # 3. 将开仓持仓策略全部写入策略库
     # for s in strategy:
