@@ -11,23 +11,36 @@
 (function() {
     'use strict';
     // configurations
-    var interval_time = 100; // 循环监控间隔时间 单位 毫秒
-    // online:
-    //var siteUrl = 'https://www.augoto.com';
-    // test:
-    var siteUrl = 'https://augoto.com:5000';  // 线上 www.augoto.com, 本地 augoto.com:5000
-    var up_price_difference = 0.2  // 设置上涨价差，到达价差即可交易，后续自动生成最佳价差
-    var down_price_difference = 0.2  // 设置看跌价差，到达价差即可交易，后续自动生成最佳价差
-    var price_error = 0.05 // 设置自动交易时允许的误差0.05元
-    var range = 10 // 设置交易区间，超过range范围即可止损 5元
-    var points = 20  // 设置交易点数，即在交易区间内平均或正态分布 points个点。10个点
-    var media_point = 268; // 设置当前7日均值，以后由系统给出，272元/g
-    var total_money = 1100000; // 设置满仓额度，每个点最多一个订单（不会出现同时看涨和看跌的情况）272000元
-    var holds = get_holds();  // 初次获取持仓数据
+    var interval_time = 5000; // 循环监控间隔时间 单位 毫秒
+    var siteUrl = 'https://www.augoto.com'  // 默认线上
+    var userdiv = $("#custName_id2",top.window.document); // 欢迎您，XXX
+    var name = userdiv.text().split('，')[1];
+    var user = get_userinfo(name); // 从线上获取userinfo
+    if (user.is_local == 1){
+        siteUrl = 'https://augoto.com:5000';
+        user = get_userinfo(name);
+    }
+    console.log(siteUrl);
+    // 设置配置文件
+    // {"up_price_difference":0.5,"down_price_difference":0.5,"price_error":0.05,"range":3,"points":7,"media_point":273}
+    var CONFIG = JSON.parse(user.config);
+    var total_money = user.investment; // 设置满仓额度
+    var up_price_difference = CONFIG.up_price_difference; //0.5 // 设置上涨价差，到达价差即可交易，后续自动生成最佳价差
+    var down_price_difference = CONFIG.down_price_difference; //0.5 // 设置看跌价差，到达价差即可交易，后续自动生成最佳价差
+    var price_error = CONFIG.price_error; // 0.05 // 设置自动交易时允许的误差0.05元
+    var range = CONFIG.range; // 3 设置交易区间，超过range范围即可止损 5元
+    var points = CONFIG.points; // 5 设置交易点数，即在交易区间内平均或正态分布 points个点。10个点
+    var media_point = CONFIG.media_point //273; // 设置当前7日均值，以后由系统给出，272元/g
+    // var holds = get_holds(name); // 初次获取持仓数据
+    //增加一次策略
+    // gen_tactic_matrix(range,points,media_point,total_money,holds);
+    // 获取最新策略空间
+    var tactic_matrix = get_latest_strategy(name);
+    //console.log(tactic_matrix);
+    load_userinfo(); // 显示用户信息在页面
     var main_area = $(document.getElementById('_left'));
-    var tactic_matrix = gen_tactic_matrix(range,points,media_point,total_money,holds);
-    if (main_area.length == 1){
-        // 确认在正确的页面里执行操作
+    if (main_area.length == 1 & user.is_active == 1){
+        // 确认在正确的页面里 并且 当前user是参与自动化交易的
         console.log('√√√√√√√√√√ I am in the right place √√√√√√ begin to work  √√√√√√√√')
         // 开始监控
         var mainInterval = setInterval(main_function, interval_time);
@@ -35,67 +48,75 @@
     function main_function(){
         // 首先获取当前交易中间价
         // online:
-        // var mid_price = parseFloat(get_current_price());
+        var mid_price = parseFloat(get_current_price());
         // test:
-        var mid_price = parseFloat(get_history_price());
-        console.log(mid_price)
+        // var mid_price = parseFloat(get_history_price());
         var sell_price = mid_price - 0.2;
         var buy_price = mid_price + 0.2;
         for (var i in tactic_matrix){
             var list = tactic_matrix[i]
-            //console.log(list);
+            // console.log(list);
             // 处理先买入后卖出看涨的订单
             if (list.category == 1){
                 // 准备卖出平仓——已经有交易id的
                 if(list.id != 0){
-                    if (sell_price - list.create_price > up_price_difference){
+                    if (sell_price > list.end_price){
                         clearInterval(mainInterval); // 先将循环中断，执行本次交易
                         console.log("ID:"+list.id+"号准备交易，价差："+(sell_price - list.create_price)+"，重量："+list.weight);
                         // online:
-                        // buy_then_sell(list.id,1,list.weight,list.create_price); // 1 代表卖出平仓
-                        // test: 回测时直接修改交易记录，省去一系列流程
-                        close_or_open_trade(1,list.id,sell_price,list.weight)  // 1代表先"买入"类别,tradeid=0则是开仓
+                        if (user.is_test==0){
+                            buy_then_sell(list.id,1,list.weight,list.create_price); // 1 代表卖出平仓
+                        }else{
+                            // test: 回测时直接修改交易记录，省去一系列流程
+                            close_or_open_trade(1,list.id,sell_price,list.weight,list.create_price) // 代表先"买入"类别,tradeid=0则是开仓
+                        }
                         break;
                     }
                 }else{
                     // 准备买入开仓
                     // 如果当前买入价和矩阵空间的误差足够小  但买入价仍旧要不大于设定即可开始交易
-                    var price_diff = list.create_price-buy_price
-                    if (price_diff < price_error & price_diff >= 0){
-                        console.log('当前买入价格'+buy_price+'距离设定价格'+list.create_price+'误差是：'+price_diff)
+                    if (buy_price < list.create_price){
+                        console.log('当前买入价格'+buy_price+'设定价格'+list.create_price)
                         console.log('准备买入');
                         clearInterval(mainInterval); // 先将循环中断，执行本次交易
                         // online:
-                        // buy_then_sell(list.id,0,list.weight,list.create_price); // 0 代表买入开仓
-                        // test: 回测时直接修改交易记录，省去一系列流程
-                        close_or_open_trade(1,list.id,buy_price,list.weight)  // 1代表先"买入"类别,tradeid=0则是开仓
+                        if (user.is_test==0){
+                            buy_then_sell(list.id,0,list.weight,list.create_price); // 0 代表买入开仓
+                        }else{
+                            // test: 回测时直接修改交易记录，省去一系列流程
+                            close_or_open_trade(1,list.id,buy_price,list.weight,list.create_price) // 1代表先"买入"类别,tradeid=0则是开仓
+                        }
                     }
                 }
                 //处理先卖出后买入的看跌订单
             }else if(list.category == -1){
                 // 准备买入平仓——已有交易id
                 if(list.id != 0){
-                    if (list.create_price - buy_price > down_price_difference){
+                    if (buy_price < list.end_price){
                         clearInterval(mainInterval); // 先将循环中断，执行本次交易
                         console.log("ID:"+list.id+"号准备交易，价差："+(buy_price - list.create_price)+"，重量："+list.weight);
                         // online:
-                        // sell_then_buy(list.id,1,list.weight,list.create_price);  // 1 代表买入平仓
-                        // test: 回测时直接修改交易记录，省去一系列流程
-                        close_or_open_trade(-1,list.id,buy_price,list.weight)  // -1 代表先“卖出”类别，tradeid=0则是开仓
+                        if (user.is_test==0){
+                            sell_then_buy(list.id,1,list.weight,list.create_price); // 1 代表买入平仓
+                        }else{
+                            // test: 回测时直接修改交易记录，省去一系列流程
+                            close_or_open_trade(-1,list.id,buy_price,list.weight,list.create_price) // -1 代表先“卖出”类别，tradeid=0则是开仓
+                        }
                         break;
                     }
                 }else{
                     // 准备卖出开仓
-                    // 如果当前卖出价和矩阵空间的误差足够小  但卖出价仍旧要大于设定即可开始交易
-                    price_diff = sell_price - list.create_price;
-                    if (price_diff < price_error &  price_diff >= 0){
-                        console.log('当前卖出价格'+sell_price+'距离设定价格'+list.create_price+'误差是：'+price_diff)
+                    if (sell_price > list.create_price){
+                        console.log('当前卖出价格：'+sell_price+'，设定价格：'+list.create_price)
                         console.log('准备卖出');
                         clearInterval(mainInterval); // 先将循环中断，执行本次交易
                         // online:
-                        // sell_then_buy(list.id,0,list.weight,list.create_price);  // 0 代表卖出开仓
-                        // test: 回测时直接修改交易记录，省去一系列流程
-                        close_or_open_trade(-1,list.id,sell_price,list.weight)  // -1 代表先“卖出”类别，tradeid=0则是开仓
+                        if (user.is_test==0){
+                            sell_then_buy(list.id,0,list.weight,list.create_price); // 0 代表卖出开仓
+                        }else{
+                            // test: 回测时直接修改交易记录，省去一系列流程
+                            close_or_open_trade(-1,list.id,sell_price,list.weight,list.create_price) // -1 代表先“卖出”类别，tradeid=0则是开仓
+                        }
                         break;
                     }
                 }
@@ -108,7 +129,7 @@
 ////////////////////////////////////////////////
 
     // 先买入后卖出函数 buy_or_sell按钮： 0=买入开按钮 1=卖出平仓按钮, pre_deal_price：触发交易的价位，并非实际交易价
-    function buy_then_sell(tradeid,buy_or_sell,amount,create_price,pre_deal_price){
+    function buy_then_sell(tradeid,buy_or_sell,amount,create_price){
         var deal_type;
         if(buy_or_sell==0){deal_type="↑买入开仓";}else{deal_type="↑卖出平仓";}
         console.log(deal_type+" 当前创建价格: ￥"+create_price+"/g");
@@ -117,15 +138,18 @@
         // 传入1，代表卖出平仓；
         choose_firstbuy_radio(buy_or_sell);
         input_up_amount_value(amount);
-        click_next_step();
-        setTimeout(function(){
-            // 提交页面会返回交易的真实价格deal_price，因为时间差可能和传入的pre_deal_price有所差距,差距过大可不成交
-            click_confirm_btn(function(deal_price){
-                console.log("当前交易价格: ￥"+deal_price+"/g");
-                sendSms(1, tradeid, buy_or_sell, amount, create_price, deal_price);  // 1代表先"买入"类型
-                close_or_open_trade(1,tradeid,deal_price,amount)  // 1代表先"买入"类别,tradeid=0则是开仓
-            })
-        },5000);
+        click_next_step(1,buy_or_sell, amount,function(can_next){ // 1代表先"买入"类型
+            if (can_next){ // 如果可交易数量足够才会继续下一步
+                click_confirm_btn(function(deal_price){
+                    // 提交页面会返回交易的真实价格deal_price
+                    console.log("当前交易价格: ￥"+deal_price+"/g");
+                    sendSms(1, tradeid, buy_or_sell, amount, create_price, deal_price); // 1代表先"买入"类型
+                    close_or_open_trade(1,tradeid,deal_price,amount,create_price) // 1代表先"买入"类别,tradeid=0则是开仓
+                })
+            }else{
+                console.log('可交易数量不够，取消交易');
+            }
+        });
     }
     // 先卖出后买入函数, sell_or_buy 0=卖出开仓  1=买入平仓
     function sell_then_buy(tradeid,sell_or_buy,amount,create_price){
@@ -137,15 +161,18 @@
         setTimeout(function(){
             choose_firstsell_radio(sell_or_buy);
             input_down_amount_value(amount);
-            click_next_step();
-            setTimeout(function(){
-                click_confirm_btn(function(deal_price){
-                    console.log("当前交易价格: ￥"+deal_price+"/g");
-                    sendSms(-1, tradeid,sell_or_buy, amount, create_price, deal_price);  // -1类别代表先卖出类型
-                    close_or_open_trade(-1,tradeid,deal_price,amount) // -1 代表先“卖出”类别，tradeid=0则是开仓
-                })
-            },5000);  //间隔5秒执行确认！！！测试期间请勿开启
-        },5000);  //间隔5秒执行先卖出后买入tab后的其他动作
+            click_next_step(-1,sell_or_buy,amount,function(can_next){ // -1类别代表先卖出类型
+                if (can_next){
+                    click_confirm_btn(function(deal_price){
+                        console.log("当前交易价格: ￥"+deal_price+"/g");
+                        sendSms(-1, tradeid,sell_or_buy, amount, create_price, deal_price); // -1类别代表先卖出类型
+                        close_or_open_trade(-1,tradeid,deal_price,amount,create_price) // -1 代表先“卖出”类别，tradeid=0则是开仓
+                    })
+                }else{
+                    console.log('可交易数量不够，取消交易');
+                }
+            });
+        },3000); //间隔5秒执行先卖出后买入tab后的其他动作
     }
 
 
@@ -221,11 +248,37 @@
         }
     }
     // 模拟点击下一步
-    function click_next_step(){
+    function click_next_step(category,is_open,amount, callback){
         console.log("点击下一步");
         var right_iframe = $(document.getElementById('_right'));
         var submit = right_iframe.contents().find("#tijiao");
-        if(submit.length==1){submit[0].click();}
+        var validBalance = right_iframe.contents().find("#validBalance a");
+        console.log(validBalance);
+        var maxAmount_div, maxAmount;
+        validBalance[0].click();
+        setTimeout(function(){
+            if(is_open == 0){ // 针对开仓的情况监测最大可交易数量
+                if(category == 1){
+                    right_iframe.contents().find('#notice').remove();
+                    maxAmount_div = right_iframe.contents().find("#maxgoldAmount");
+                }else{
+                    right_iframe.contents().find("#maxAmount span").remove();
+                    maxAmount_div = right_iframe.contents().find("#maxAmount");
+                }
+                maxAmount = parseFloat(maxAmount_div.text())
+                console.log(maxAmount)
+                if(submit.length==1 & maxAmount>amount){
+                    submit[0].click();
+                    // 通过callback 返回是否成功进行下一步
+                    callback(true);
+                }else{
+                    callback(false);
+                }
+            }else{ // 平仓一律通知成功下一步
+                submit[0].click();
+                callback(true);
+            }
+        },2000);
     }
     //模拟点击提交
     function click_confirm_btn(callback){
@@ -239,7 +292,9 @@
             var firstbuy_tab = $("#ebdp-pc4promote-menu-level1-text-1");
             var firstsell_tab = $("#ebdp-pc4promote-menu-level1-text-2");
             if (confirm.length ==1 ){
-                // confirm[0].click();  // ！！！！测试时一定关闭确认按钮！！！！！！
+                if (user.is_local == 0){
+                    confirm[0].click(); // ！！！！本地测试时不执行确认按钮！！！！！！
+                }
                 // 一但找到提交按钮 立即停止，避免重复交易
                 clearInterval(interval_for_confirm);
                 // 播放声音提醒交易成功
@@ -251,25 +306,36 @@
                 callback(deal_price);
 
             }
-        }, 1000);
+        }, 4000);
     }
 
 /////////////////////////////////////////////////////// ///////
 ///// 以下是和augoto交互的代码，获取持仓，关闭交易，和发送短信 ////////
 /////////////////////////////////////////////////////// ///////
-
-    // 获取augoto.com持仓数据 condition=sql 里的 where
-    function get_holds(condition){
-        //console.log('获取一次持仓数据')
-        if (condition == null){
-            // online:
-            // condition = 'id>250';
-            // test:
-            condition = 'id>75';
-        }
+    // 获取augoto.com的用户信息，name来自工行登录后的用户名
+    function get_userinfo(name){
         var result = null;
         $.ajax({
-            url: siteUrl+"/trades?hold=1&api=1&condition="+condition,
+            url: siteUrl+"/get_user?userapi=1&name="+encodeURI(name),
+            type: 'get',
+            async: false,
+            success: function(data) {
+                result = JSON.parse(data);
+            }
+        });
+        return result;
+    }
+
+    // 获取augoto.com持仓数据 condition=sql 里的 where
+    function get_holds(name){
+        //console.log('获取一次持仓数据')
+        // online:
+        var condition = 'id>235';
+        // test:
+        // var condition = 'id>75';
+        var result = null;
+        $.ajax({
+            url: siteUrl+"/trades?hold=1&api=1&condition="+condition+"&user="+encodeURI(name),
             type: 'get',
             async: false,
             success: function(data) {
@@ -280,13 +346,14 @@
     }
 
     // 修改augoto的交易数据，有id是平仓，没id是开仓，category=1先买入 -1先卖出，最终状态都是1=成交，没有挂单和观望
-    function close_or_open_trade(category,tradeid,deal_price,weight){
+    function close_or_open_trade(category,tradeid,deal_price,weight,create_price){
         if (tradeid==0) {
         // 没有交易id，执行开仓动作
-            var post_data = {'category':category,'create_price':deal_price, 'create_status':1, 'weight':weight}
+            var post_data = {'category':category,'create_price':deal_price, 'create_status':1, 'weight':weight, 'price_for':create_price}
+            console.log(post_data)
             console.log('通知augoto开仓成交，创建一条记录');
             $.ajax({
-                url: siteUrl+"/add?api=1",
+                url: siteUrl+"/add?api=1"+"&user="+encodeURI(name),
                 type: 'post',
                 dataType: 'json',
                 contentType: "application/json",
@@ -303,10 +370,10 @@
             });
         }else{
         // 有交易id，执行平仓动作 不修改weight的值
-            post_data = {'tradeid':tradeid, 'end_price':deal_price, 'end_status':1}
+            post_data = {'tradeid':tradeid, 'weight':weight, 'end_price':deal_price, 'end_status':1}
             console.log('通知augoto平仓成交');
             $.ajax({
-                url: siteUrl+"/edit?api=1",
+                url: siteUrl+"/edit?api=1"+"&user="+encodeURI(name),
                 type: 'post',
                 dataType: 'json',
                 contentType: "application/json",
@@ -356,38 +423,128 @@
         });
         return result;
     }
+
+    // 增加新的策略空间
+    function add_strategy(content){
+        // 没有交易id，执行开仓动作
+        var post_data = {'content':JSON.stringify(content)}
+        $.ajax({
+            url: siteUrl+"/add_strategy?api=1"+"&user="+encodeURI(name),
+            type: 'post',
+            dataType: 'json',
+            contentType: "application/json",
+            data: JSON.stringify(post_data),
+            success: function(data) {
+                var result = data;
+                console.log(result);
+            },
+            error: function( jqXhr, textStatus, errorThrown ){
+                console.log( errorThrown );
+            }
+        });
+    }
+
+    // 获取augoto.com 的策略数据
+    function get_latest_strategy(name){
+        var result = null;
+        $.ajax({
+            url: siteUrl+"/get_strategy?hold=1&api=1&user="+encodeURI(name),
+            type: 'get',
+            async: false,
+            success: function(data) {
+                result = JSON.parse(data);
+                result = JSON.parse(result.content);
+            }
+        });
+        return result;
+    }
+
+
+
 /////////////////////////////////////////////////////// ///////
 ///// 以下是和本地逻辑，策略空间、播放提醒声音等 ////////
 /////////////////////////////////////////////////////// ///////
     // 生成策略空间矩阵
     function gen_tactic_matrix(range,points,media_point,total_money,holds){
-        var per_amount = (total_money/media_point/points).toFixed(0);
-        var distance = range/points;
+        console.log("生成策略空间")
+        // 计算当前布局区间范围
+        var current_range = [media_point-parseFloat(range)/2 , media_point+parseFloat(range)/2]
+        var left_money = user.balance; // 监控剩余资金
+        var left_points = 0 // 监控剩余点位
         var tactic_matrix = [];
-        for (var p=0;p<points;p++){
-            var create_price = media_point-(range-1)/2 + p*distance;
-            var found_up_points=0; //找到看涨的点已经下单
-            var found_down_points=0; //找到看跌的点已经下单
-            holds.forEach(function(hold) {
-                if(Math.abs(hold.create_price-create_price)<distance/2){
-                    tactic_matrix.push(hold);
-                    if(hold.category==1){found_up_points=1}else{found_down_points=1}
+        holds.forEach(function(hold) {
+            // 为尺寸增加平仓的点 end_price
+            if(hold.id>0){
+                delete hold.create_time;
+                delete hold.create_status;
+                delete hold.end_time;
+                delete hold.profit;
+                delete hold.end_status;
+                delete hold.year_ratio;
+                delete hold.end_status;
+                if (hold.category==1){
+                    hold.end_price = hold.create_price + up_price_difference;
+                }else{
+                    hold.end_price = hold.create_price - down_price_difference;
                 }
+            }
+        });
+        console.log("剩余资金："+left_money);
+        console.log("中间点位："+media_point);
+        if(left_money > 0){
+            var distance = parseFloat(range/(points-1)).toFixed(2);
+            for (var p=0;p<points;p++){
+                var create_price = (media_point-parseFloat(range/2) + p*distance).toFixed(2);
+                var found_up_points=0; //找到看涨的点已经下单
+                var found_down_points=0; //找到看跌的点已经下单
+                holds.forEach(function(hold) {
+                    // if(Math.abs(hold.create_price-create_price)<distance/2){  // 判断当前持仓价格在目标点附近，就跳过该目标点
+                    if(hold.price_for == create_price || Math.abs(hold.create_price-create_price)<distance/2 ){ // 判断当前持仓点的price_for和目标点一致，也可以跳过该目标点
+                        var index = holds.indexOf(hold);
+                        holds.splice(index,1); // 从第index个元素起，删除后面的1个元素
+                        tactic_matrix.push(hold);
+                        if(hold.category==1){found_up_points=1}else{found_down_points=1}
+                    }
+                });
+                // 均值以上不再买入
+                if (found_up_points==0 & create_price <= media_point){
+                    left_points = left_points + 1 ;
+                    tactic_matrix.push({'id':0,'category':1,'create_price':create_price,'weight':0});
+                }
+                // 均指以下不再卖出
+                if(found_down_points==0 & create_price > media_point){
+                    left_points = left_points + 1 ;
+                    tactic_matrix.push({'id':0,'category':-1,'create_price':create_price,'weight':0});
+                }
+            }
+            console.log("剩余点位："+left_points);
+            var per_amount = parseFloat(left_money/media_point/left_points).toFixed(0);
+            tactic_matrix.forEach(function(t){
+                if (t.id == 0){
+                    t.weight = per_amount;
+                }
+            })
+            // 加入剩余不在策略空间的持仓
+            holds.forEach(function(hold) {
+                tactic_matrix.push(hold);
             });
-            if (found_up_points==0){
-                tactic_matrix.push({'id':0,'category':1,'create_price':create_price,'weight':per_amount});
-            }
-            if(found_down_points==0){
-                tactic_matrix.push({'id':0,'category':-1,'create_price':create_price,'weight':per_amount});
-            }
+        }else{
+            // 如果已经满仓或者满位，直接返回持仓即可
+            holds.forEach(function(hold) {
+                tactic_matrix.push(hold);
+            });
         }
-        return tactic_matrix;
+        // wxfs 策略通过这里写入数据库，其他策略有其他写入渠道
+        if (user.strategy_name == 'wxfs'){
+            add_strategy(tactic_matrix);
+        }
     }
 
     // 更新全局变量包括：最新持仓、策略空间、中间值、波动方差等；
     function update_configuration(){
-        holds = get_holds();  // 更新持仓
-        tactic_matrix = gen_tactic_matrix(range,points,media_point,total_money,holds); //更新策略空间
+        // holds = get_holds(name);  // 更新持仓
+        // tactic_matrix = gen_tactic_matrix(range,points,media_point,total_money,holds); //更新策略空间
+        tactic_matrix = get_latest_strategy(name);  // 获取最新策略
         mainInterval = setInterval(main_function, interval_time); // 开始新的监控循环
     }
 
@@ -416,6 +573,41 @@
         var audio = document.getElementById("audioPlay");
         //浏览器支持 audio
         audio.play();
+    }
+
+    function load_userinfo(){
+        var logodiv = $("#myname",top.window.document);
+        var info = "<div id='userinfo' style='background:yellow;color:red;width:200px;height:170px;padding:10px 20px;line-height:24px;font-size:14px;'>姓名："+
+            user.name+"<br>是否激活："+user.is_active+" <a class='user_status_button' id='is_active' style='padding:0 10px; background:white;font-size:12px; cursor:pointer;' href='javascript:;'>更改</a><br>是否实盘："+
+            (1-user.is_test)+" <a class='user_status_button' id='is_test' style='padding:0 10px; background:white;font-size:12px; cursor:pointer;' href='javascript:;'>更改</a><br>是否本地："+
+            user.is_local+" <a class='user_status_button' id='is_local' style='padding:0 10px; background:white;font-size:12px; cursor:pointer;' href='javascript:;'>更改</a><br>策略代号："+
+            user.strategy_name+"<br>策略空间："+tactic_matrix.length+"条可执行 <a id='strategy_list' style='padding:0 10px; background:white;font-size:12px; cursor:pointer;' href='javascript:;'>显示</a><br>24h均值："+
+            media_point+"</div>";
+        logodiv.find("#userinfo").remove();
+        logodiv.append(info);
+
+        $(".user_status_button",top.window.document).click(function(){
+            var key = $(this).attr('id');
+            if (key == 'is_local'){ // 针对切换本地/线上, 永远只要更新线上的即可，本地的is_local应该永远为1
+                siteUrl = "https://www.augoto.com";
+            }
+            $.ajax({
+                url: siteUrl+"/change_user_status?api=1&user="+encodeURI(name)+"&key="+key,
+                type: 'get',
+                async: false,
+                success: function(data) {
+                    var result = JSON.parse(data);
+                }
+            });
+        })
+        $("#strategy_list",top.window.document).click(function(){
+            var content = "ID   |  多空   |  始价  |  终价  |  重量"
+            tactic_matrix.forEach(function(strategy) {
+                content = content + "\n" + strategy.id + " | " + strategy.category + " | " + parseFloat(strategy.create_price).toFixed(2) + " | " + parseFloat(strategy.end_price).toFixed(2) + " | " + strategy.weight;
+            });
+            alert(content);
+        })
+
     }
 
 })();

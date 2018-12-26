@@ -85,28 +85,34 @@ def gen_new_strategy(current_time,current_price,user):
     left_points = 0 # 初始化没有下单的位置点数
     holds = query_db('select * from trades where end_status!=1 and userid='+str(user["id"])+' order by category, create_price DESC')
     
-    # 2 持仓策略，调整预期平仓价格
+    # 获取关键指标
+    avg_price = get_avg_price(current_time, 1) # 使用1天的均值作为中间值
+    media_point = round(float(avg_price) / point_distance,0) * point_distance
+    update_config(media_point,user)  # 更新用户的config
+    
+    # 1 持仓策略，调整预期平仓价格
     # 获取合理的交易价差, 返回值为[up_space, down_space]
     # deal_space = get_deal_space
     deal_space = [CONFIG["up_price_difference"],CONFIG["down_price_difference"]]
     up_space = deal_space[0]
     down_space = deal_space[1]
+    min_space = min(up_space,down_space)
+    key_point = media_point + point_distance * (up_space -  down_space) / float(min_space)
+
     for hold in holds:
         if hold["category"] == 1:
             hold["end_price"] = hold["create_price"] + up_space
         else:
             hold["end_price"] = hold["create_price"] - down_space
         strategy.append(hold)
-    # 在当前时间，对于当前空间，进行布点扫描
-    avg_price = get_avg_price(current_time, 1) # 使用1天的均值作为中间值
-    media_point = round(float(avg_price) / point_distance,0) * point_distance
-    update_config(media_point,user)  # 更新用户的config
-    # 1. 如果当余额大于零则继续布局开仓
+    
+    # 2. 如果当余额大于零则继续布局开仓
     if balance > 0:
         # 当前价格落在交易区间以外时，即停止开仓交易，说明急涨急跌，以至均价跟不上变化，可以暂停交易，也可以改变策略
         if current_price < (media_point-float(deal_range)/2) or current_price > (media_point+float(deal_range)/2):
             print str(current_time)+"超出区间，没有策略，停止开仓交易当前价"+str(current_price)+", 中间价"+str(media_point)
         else:
+            # 在当前时间，对于当前空间，进行布点扫描
             # 1.1 开仓策略：落在区间范围内时继续布局
             for p in range(0,points):
                 create_price = round(media_point-float(deal_range)/2 + p*point_distance,2)
@@ -127,10 +133,10 @@ def gen_new_strategy(current_time,current_price,user):
                 # 如果没找到持仓，则将该点写入策略库中
                 # todo 
                 # 权重部分以后写，当前是保守策略：超出均值不看涨，低于均值不看跌
-                if found_up_points==0 and create_price < media_point:
+                if found_up_points==0 and create_price < key_point:
                     left_points = left_points + 1
                     strategy.append({'id':0,'category':1,'create_price':create_price,'weight':0})
-                if found_down_points==0 and create_price > media_point:
+                if found_down_points==0 and create_price > key_point:
                     left_points = left_points + 1
                     strategy.append({'id':0,'category':-1,'create_price':create_price,'weight':0})
 
@@ -140,18 +146,6 @@ def gen_new_strategy(current_time,current_price,user):
                 if(s["id"] == 0):
                     s["weight"] = per_amount
 
-    # 2 持仓策略，调整预期平仓价格
-    # 获取合理的交易价差, 返回值为[up_space, down_space]
-    # deal_space = get_deal_space
-    #deal_space = [CONFIG["up_price_difference"],CONFIG["down_price_difference"]]
-    #up_space = deal_space[0]
-    #down_space = deal_space[1]
-    #for hold in holds:
-    #    if hold["category"] == 1:
-    #        hold["end_price"] = hold["create_price"] + up_space
-    #    else:
-    #        hold["end_price"] = hold["create_price"] - down_space
-    #    strategy.append(hold)
 
     # 3. 将开仓持仓策略全部写入策略库
     # for s in strategy:

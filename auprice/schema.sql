@@ -28,17 +28,23 @@
 -- );
 
 drop table if exists user;
-create table user (
+CREATE TABLE user (
   id integer primary key autoincrement,
-  username varchar not null, 
+  username varchar not null,
   name varchar not null,
   password varchar not null,
   phone varchar not null,
   create_time timestamp,
-  strategy_name text not null,
-  investment integer not null
-  is_active boolean not null,
-);
+  investment integer not null, 
+  config text, 
+  is_active boolean, 
+  strategy_name text, 
+  is_test boolean, 
+  balance float, 
+  profits float, 
+  hold_money float, 
+  is_local boolean
+  );
 
 drop table if exists strategy;
 create table strategy (
