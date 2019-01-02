@@ -8,3 +8,4 @@ auenv/
 config.py
 auprice/test-results
 *.db
+test*

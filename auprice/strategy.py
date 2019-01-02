@@ -178,9 +178,10 @@ def get_new_price():
 # 为指定用户更新策略
 @manager.command
 def update_strategy(user):
-    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    current_price = get_new_price()
-    gen_new_strategy(current_time,current_price,user)
+    if user["strategy_name"] == 'wxfs':
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        current_price = get_new_price()
+        gen_new_strategy(current_time,current_price,user)
 
 def update_config(media_point, user):
     CONFIG = json.loads(user["config"])
