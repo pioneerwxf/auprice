@@ -103,6 +103,16 @@ def get_strategy():
         resp.headers['Access-Control-Allow-Origin'] = '*'
         return resp
 
+@app.route('/get_trade')
+def get_trade():
+    api = request.args.get('api')
+    tradeid = request.args.get('id')
+    trade = query_db('select * from trades where id='+str(tradeid)) # select n 个data
+    resp = jsonify(json.dumps(trade[0]))
+    # 跨域设置
+    resp.headers['Access-Control-Allow-Origin'] = '*'
+    return resp
+
 @app.route('/get_price')
 def get_price():
     api = request.args.get('api')  # 代表是api的请求, 请求最近一次未被测试的数据
@@ -209,8 +219,10 @@ def history():
 
 @app.route('/trades')
 def trades():
-    user = get_user(request.args.get('user'))
-    print user['username']
+    user = request.args.get('user')
+    if user != 'all':
+        user = get_user(user)
+        print user['username']
     new_price = json.loads(get_new_data())
     hold = request.args.get('hold')  # 持仓的key
     api = request.args.get('api')  # 代表是api的请求
@@ -221,8 +233,11 @@ def trades():
             condition = condition + " and end_status!=1"
         else:
             condition = "end_status!=1"
-        trades_lists = query_db("select * from trades where " + condition + " and userid='" + str(user["id"]) + "' \
+        if user != 'all':
+            trades_lists = query_db("select * from trades where " + condition + " and userid='" + str(user["id"]) + "' \
             order by category, create_price DESC")
+        else:
+            trades_lists = query_db("select * from trades where " + condition + " order by category, create_price DESC")
         # 用做接口返回json
         if api:
             resp = jsonify(json.dumps(trades_lists))
